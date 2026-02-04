@@ -5,7 +5,6 @@ tags: ['Markdown', 'Demo', 'Guide']
 layout: wide
 graph: true
 ---
-
 # Markdown 全特性演示
 
 > [!TIP]
@@ -15,13 +14,16 @@ graph: true
 
 ## 1. 基础排版
 
-### 1.1 标题层级
+### 1.1 标题层级 (H2-H6)
 
-# H1 标题
 ## H2 标题
+
 ### H3 标题
+
 #### H4 标题
+
 ##### H5 标题
+
 ###### H6 标题
 
 ### 1.2 文本样式
@@ -36,38 +38,42 @@ graph: true
 - 脚注[^1]
 
 [^1]: 这里是脚注的内容。
-
+    
 ### 1.3 列表
 
 **无序列表**：
+
 - 项目 1
 - 项目 2
   - 子项目 A
   - 子项目 B
 
 **有序列表**：
+
 1. 第一步
 2. 第二步
    1. 子步骤 2.1
    2. 子步骤 2.2
 
 **任务列表**：
+
 - [x] 已完成任务
 - [ ] 未完成任务
 - [ ] 待办事项
 
 ### 1.4 引用
 
->这是一段引用文本。
+> 这是一段引用文本。
 >
 >> 这是嵌套引用。
+>>
 
 ## 2. 表格与对齐
 
-| 左对齐 | 居中对齐 | 右对齐 |
-| :----- | :----: | -----: |
+| 左对齐   | 居中对齐 |   右对齐 |
+| :------- | :------: | -------: |
 | 单元格 1 | 单元格 2 | 单元格 3 |
-| Content | Content | Content |
+| Content  | Content |  Content |
 
 ## 3. 代码高亮
 
@@ -122,7 +128,7 @@ yarn install
 $$
 \frac{1}{\Bigl(\sqrt{\phi \sqrt{5}}-\phi\Bigr) e^{\frac25 \pi}} = 
 1+\frac{e^{-2\pi}} {1+\frac{e^{-4\pi}} {1+\frac{e^{-6\pi}}
-{1+\frac{e^{-8\pi}} {1+\ldots} } } } 
+{1+\frac{e^{-8\pi}} {1+\ldots} } } }
 $$
 
 ### 4.3 矩阵与对齐
@@ -135,10 +141,7 @@ $$
 \end{vmatrix}
 $$
 
-## 5. 图表 (Mermaid)
-
-### 5.1 流程图
-
+## 5. 图表 
 ```mermaid
 graph LR
     A[开始] --> B{判断?}
@@ -200,7 +203,9 @@ gantt
 
 ### 7.1 张量可视化 (TensorPlayground)
 
-<TensorPlayground></TensorPlayground>
+<ClientOnly>
+  <TensorPlayground></TensorPlayground>
+</ClientOnly>
 
 ### 7.2 语义热力图 (SemanticHeatmap)
 
@@ -208,7 +213,9 @@ gantt
 
 ### 7.3 WASM 沙箱 (CodeSandbox)
 
-<CodeSandbox></CodeSandbox>
+<ClientOnly>
+  <CodeSandbox></CodeSandbox>
+</ClientOnly>
 
 ## 8. WikiLinks (双向链接)
 

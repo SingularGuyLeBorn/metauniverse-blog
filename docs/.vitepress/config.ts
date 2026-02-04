@@ -35,7 +35,8 @@ export default defineConfig({
               for (let i = 0; i < token.children.length; i++) {
                 const child = token.children[i];
                 if (child.type === 'text' && child.content) {
-                  const regex = /\[\[([^\]|]+)(?:\|[^\]]+)?\]\]/g;
+                  // 排除 [[TOC]]
+                  const regex = /\[\[(?!TOC\]\])([^\]|]+)(?:\|[^\]]+)?\]\]/g;
                   let match;
                   // 简单的文本替换逻辑 (注: 生产环境建议编写完整的 Tokenizer)
                   // 这里为了简化演示，我们假设 [[ ]] 不会跨 Token 分割
@@ -53,8 +54,9 @@ export default defineConfig({
         
         md.renderer.rules.text = function(tokens, idx, options, env, self) {
           const content = tokens[idx].content;
-          if (content.match(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/)) {
-            return content.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (match, p1, p2) => {
+          // 排除 [[TOC]]
+          if (content.match(/\[\[(?!TOC\]\])([^\]|]+)(?:\|([^\]]+))?\]\]/)) {
+            return content.replace(/\[\[(?!TOC\]\])([^\]|]+)(?:\|([^\]]+))?\]\]/g, (match, p1, p2) => {
               const link = p1.trim().toLowerCase().replace(/\s+/g, '-');
               const text = p2 ? p2.trim() : p1.trim();
               return `<a href="/posts/${link}.html" class="wiki-link">${text}</a>`;
@@ -92,7 +94,8 @@ export default defineConfig({
   
   head: [
     ['meta', { name: 'theme-color', content: '#0ea5e9' }],
-    ['meta', { name: 'apple-mobile-web-app-capable', content: 'yes' }],
+    ['meta', { name: 'mobile-web-app-capable', content: 'yes' }],
+    ['meta', { name: 'apple-mobile-web-app-capable', content: 'yes' }], // 保持兼容性
     ['link', { rel: 'icon', href: '/favicon.ico' }],
     ['link', { rel: 'preconnect', href: 'https://cdn.jsdelivr.net' }],
     // 初始化脚本 - 避免模式切换闪烁
