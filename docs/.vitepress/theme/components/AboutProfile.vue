@@ -1,7 +1,7 @@
 <template>
   <div class="about-profile">
     <div class="profile-header">
-      <div class="avatar-container">
+      <div class="avatar-container" @click="triggerConfetti">
         <div class="avatar-placeholder">ME</div>
       </div>
       <div class="profile-info">
@@ -50,6 +50,21 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
+import confetti from 'canvas-confetti'
+
+const triggerConfetti = (e: MouseEvent) => {
+  const rect = (e.target as HTMLElement).getBoundingClientRect()
+  const x = (rect.left + rect.width / 2) / window.innerWidth
+  const y = (rect.top + rect.height / 2) / window.innerHeight
+
+  confetti({
+    particleCount: 100,
+    spread: 70,
+    origin: { x, y }
+  })
+}
+
 const skills = [
   { name: 'Python / PyTorch', level: 90 },
   { name: 'LLM Engineering (RAG, Fine-tuning)', level: 85 },
@@ -104,6 +119,12 @@ const experience = [
   justify-content: center;
   font-size: 2rem;
   font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.avatar-placeholder:active {
+  transform: scale(0.9);
 }
 
 .profile-info h2 {

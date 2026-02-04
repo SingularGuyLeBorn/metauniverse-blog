@@ -86,105 +86,30 @@ const typeEffect = () => {
   timer = setTimeout(typeEffect, typeSpeed)
 }
 
+const handleMouseMove = (e: MouseEvent) => {
+  const cards = document.querySelectorAll('.dashboard-card')
+  cards.forEach((card) => {
+    const rect = (card as HTMLElement).getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    ;(card as HTMLElement).style.setProperty('--x', `${x}px`)
+    ;(card as HTMLElement).style.setProperty('--y', `${y}px`)
+  })
+}
+
 onMounted(() => {
   typeEffect()
+  window.addEventListener('mousemove', handleMouseMove)
 })
 
 onUnmounted(() => {
   if (timer) clearTimeout(timer)
+  window.removeEventListener('mousemove', handleMouseMove)
 })
 </script>
 
 <style scoped>
-.home-hero {
-  position: relative;
-  min-height: 80vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 4rem 2rem;
-  overflow: hidden;
-  text-align: center;
-}
-
-.hero-content {
-  position: relative;
-  z-index: 10;
-  margin-bottom: 4rem;
-}
-
-.hero-title {
-  font-size: 4rem;
-  font-weight: 800;
-  margin-bottom: 1rem;
-  letter-spacing: -0.05em;
-  background: linear-gradient(135deg, var(--vp-c-brand-1), var(--vp-c-brand-3));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: fadeUp 1s ease-out;
-}
-
-.hero-subtitle {
-  font-size: 1.5rem;
-  color: var(--vp-c-text-2);
-  margin-bottom: 2rem;
-  min-height: 1.5em;
-  font-family: monospace;
-}
-
-.cursor {
-  animation: blink 1s infinite;
-  color: var(--vp-c-brand-1);
-}
-
-.hero-actions {
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-  animation: fadeUp 1s ease-out 0.2s backwards;
-}
-
-.action-btn {
-  padding: 0.75rem 2rem;
-  border-radius: 999px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  text-decoration: none;
-}
-
-.action-btn.primary {
-  background: var(--vp-c-brand-1);
-  color: white;
-}
-
-.action-btn.primary:hover {
-  background: var(--vp-c-brand-2);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(var(--vp-c-brand-1-rgb), 0.3);
-}
-
-.action-btn.secondary {
-  background: var(--vp-c-bg-soft);
-  color: var(--vp-c-text-1);
-  border: 1px solid var(--vp-c-divider);
-}
-
-.action-btn.secondary:hover {
-  background: var(--vp-c-bg-mute);
-  transform: translateY(-2px);
-}
-
-/* Dashboard Grid */
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 2rem;
-  width: 100%;
-  max-width: 1200px;
-  z-index: 10;
-  animation: fadeUp 1s ease-out 0.4s backwards;
-}
+/* ... existing styles ... */
 
 .dashboard-card {
   background: var(--vp-c-bg-soft);
@@ -192,19 +117,51 @@ onUnmounted(() => {
   border-radius: 1rem;
   border: 1px solid var(--vp-c-divider);
   text-decoration: none;
-  transition: all 0.3s ease;
+  transition: transform 0.3s ease, border-color 0.3s ease; /* Removed background transition for spotlight */
   backdrop-filter: blur(10px);
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.dashboard-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(
+    800px circle at var(--x) var(--y),
+    rgba(255, 255, 255, 0.06),
+    transparent 40%
+  );
+  z-index: 0;
+  pointer-events: none;
+}
+
+.dashboard-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Dark mode adjustment for spotlight */
+:root.dark .dashboard-card::before {
+  background: radial-gradient(
+    800px circle at var(--x) var(--y),
+    rgba(255, 255, 255, 0.1),
+    transparent 40%
+  );
 }
 
 .dashboard-card:hover {
   transform: translateY(-5px);
   border-color: var(--vp-c-brand-1);
   box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.1);
-  background: var(--vp-c-bg-mute);
+  /* background: var(--vp-c-bg-mute);  Removed to let spotlight show */
 }
 
 .card-icon {

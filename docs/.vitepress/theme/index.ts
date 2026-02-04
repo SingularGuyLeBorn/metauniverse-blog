@@ -24,14 +24,20 @@ import RelatedReferences from "./components/features/RelatedReferences.vue";
 import Mermaid from "./components/Mermaid.vue";
 import HomeHero from "./components/HomeHero.vue";
 import AboutProfile from "./components/AboutProfile.vue";
+import ScrollProgress from "./components/features/ScrollProgress.vue";
+import NotFound from "./components/NotFound.vue";
 
 export default {
   extends: DefaultTheme,
+  NotFound, // Override default 404
 
   Layout: () => {
     const { frontmatter } = useData();
 
     return h(DefaultTheme.Layout, null, {
+      // 顶部阅读进度条
+      "layout-top": () => h(ScrollProgress),
+      
       // 布局底部插槽 - 模式切换器和热力图
       "layout-bottom": () =>
         h("div", { id: "mu-teleport-container" }, [
