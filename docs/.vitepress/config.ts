@@ -307,7 +307,7 @@ export default defineConfig({
     },
     
     ssr: {
-      noExternal: ['@vueuse/core', 'pinia', 'flexsearch']
+      noExternal: ['flexsearch']
     },
     
     optimizeDeps: {
