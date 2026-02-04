@@ -140,28 +140,97 @@ export default defineConfig({
     
     nav: [
       { text: '首页', link: '/' },
-      { text: '文章', link: '/posts/' },
-      { text: '笔记', link: '/notes/' },
-      { text: '关于', link: '/about' }
+      { text: '论文阅读', link: '/papers/' },
+      { 
+        text: '知识库', 
+        items: [
+          { text: 'LLM 0到1', link: '/knowledge/llm-0-to-1/' },
+          { text: 'CS336 课程', link: '/knowledge/cs336/' },
+          { text: 'DeepSeek 分析', link: '/knowledge/deepseek/' }
+        ]
+      },
+      { text: '杂谈', link: '/essays/' },
+      { text: '随想', link: '/thoughts/' },
+      { text: '年度总结', link: '/yearly/' },
+      { text: '关于我', link: '/about/' }
     ],
     
     sidebar: {
-      '/posts/': [
+      '/papers/': [
         {
-          text: '文章',
+          text: '论文阅读',
           items: [
-            { text: '全部文章', link: '/posts/' },
-            { text: 'Hello World', link: '/posts/hello-world' },
-            { text: 'Transformer 架构', link: '/posts/transformer' },
-            { text: 'Markdown 演示', link: '/posts/markdown-demo' }
+            { text: '首页', link: '/papers/' },
+            // Example: { text: 'Attention Is All You Need', link: '/papers/transformer' }
           ]
         }
       ],
-      '/notes/': [
+      '/knowledge/llm-0-to-1/': [
         {
-          text: '原子笔记',
+          text: 'LLM 从 0 到 1',
           items: [
-            { text: '全部笔记', link: '/notes/' }
+            { text: '全流程概览', link: '/knowledge/llm-0-to-1/' },
+            // { text: '预训练', link: '/knowledge/llm-0-to-1/pretrain' }
+          ]
+        }
+      ],
+      '/knowledge/cs336/': [
+        {
+          text: 'CS336 课程笔记',
+          items: [
+            { text: '课程概览', link: '/knowledge/cs336/' },
+            // { text: 'Lecture 1', link: '/knowledge/cs336/lec1' }
+          ]
+        }
+      ],
+      '/knowledge/deepseek/': [
+        {
+          text: 'DeepSeek 分析',
+          items: [
+            { text: '模型概览', link: '/knowledge/deepseek/' },
+            // { text: 'DeepSeek-V2', link: '/knowledge/deepseek/v2' }
+          ]
+        }
+      ],
+      '/essays/': [
+        {
+          text: '杂谈',
+          items: [
+            { text: '全部文章', link: '/essays/' }
+          ]
+        }
+      ],
+      '/thoughts/': [
+        {
+          text: '随想',
+          items: [
+            { text: '全部随想', link: '/thoughts/' }
+          ]
+        }
+      ],
+      '/yearly/': [
+        {
+          text: '年度总结',
+          items: [
+            { text: '历年总结', link: '/yearly/' }
+          ]
+        }
+      ],
+      '/about/': [
+        {
+          text: '关于',
+          items: [
+            { text: '关于我', link: '/about/' }
+          ]
+        }
+      ],
+      // Fallback sidebar
+      '/': [
+        {
+          text: '近期更新',
+          items: [
+            { text: 'Markdown 演示', link: '/posts/markdown-demo' },
+            { text: 'Transformer 架构', link: '/posts/transformer' }
           ]
         }
       ]

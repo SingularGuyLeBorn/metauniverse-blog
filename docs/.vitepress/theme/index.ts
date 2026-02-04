@@ -22,6 +22,8 @@ import CodeSandbox from "./components/features/CodeSandbox.vue";
 import RAGSearch from "./components/features/RAGSearch.vue";
 import RelatedReferences from "./components/features/RelatedReferences.vue";
 import Mermaid from "./components/Mermaid.vue";
+import HomeHero from "./components/HomeHero.vue";
+import AboutProfile from "./components/AboutProfile.vue";
 
 export default {
   extends: DefaultTheme,
@@ -60,6 +62,8 @@ export default {
     app.component("CodeSandbox", CodeSandbox);
     app.component("RAGSearch", RAGSearch);
     app.component("Mermaid", Mermaid);
+    app.component("HomeHero", HomeHero);
+    app.component("AboutProfile", AboutProfile);
 
     // 客户端初始化
     if (typeof window !== "undefined") {
