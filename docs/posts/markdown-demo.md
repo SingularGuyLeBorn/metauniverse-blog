@@ -2,7 +2,6 @@
 title: Markdown 全特性演示
 date: 2024-03-21
 tags: ['Markdown', 'Demo', 'Guide']
-layout: wide
 graph: true
 ---
 # Markdown 全特性演示
@@ -57,7 +56,7 @@ graph: true
 
 **任务列表**：
 
-- [x] 已完成任务
+- [X] 已完成任务
 - [ ] 未完成任务
 - [ ] 待办事项
 
@@ -79,7 +78,7 @@ graph: true
 
 ### 3.1 基础代码块
 
-```typescript:line-numbers {3}
+```typescript:line-numbers
 // TypeScript 示例
 interface User {
   id: number;
@@ -96,15 +95,15 @@ const user: User = {
 
 ::: code-group
 
-```bash [npm]
+```bash
 npm install
 ```
 
-```bash [pnpm]
+```bash
 pnpm install
 ```
 
-```bash [yarn]
+```bash
 yarn install
 ```
 
@@ -141,7 +140,8 @@ $$
 \end{vmatrix}
 $$
 
-## 5. 图表 
+## 5. 图表
+
 ```mermaid
 graph LR
     A[开始] --> B{判断?}
