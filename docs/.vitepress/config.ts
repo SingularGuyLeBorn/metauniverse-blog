@@ -3,15 +3,16 @@ import { withMermaid } from 'vitepress-plugin-mermaid'
 import fs from 'node:fs'
 
 export default withMermaid(defineConfig({
+  mermaid: {
+    // refer to mermaidjs.github.io for options
+    startOnLoad: false,
+    securityLevel: 'loose',
+    theme: 'default',
+  },
   lang: 'zh-CN',
   title: 'MetaUniverse',
   titleTemplate: ':title | MetaUniverse',
   description: '大模型技术博客 - 探索AI的无限可能',
-  
-  mermaid: {
-    // 修复甘特图和饼图渲染问题
-    startOnLoad: false
-  },
   
   lastUpdated: true,
   cleanUrls: true,
