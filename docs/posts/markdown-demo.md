@@ -198,13 +198,36 @@ sequenceDiagram
     end
 ```
 
-### 5.3 饼图 (Pie)
+### 5.3 甘特图 (Gantt)
 
 ```mermaid
-pie title Pets adopted by volunteers
+gantt
+    title 项目开发计划
+    dateFormat  YYYY-MM-DD
+    section 设计
+    需求分析           :a1, 2024-03-01, 3d
+    原型设计           :after a1  , 5d
+    section 开发
+    前端开发           :2024-03-09  , 10d
+    后端开发           :2024-03-09  , 10d
+```
+
+### 5.4 饼图 (Pie)
+
+```mermaid
+pie
+    title 宠物领养统计
     "Dogs" : 386
     "Cats" : 85
     "Rats" : 15
+```
+
+### 5.5 类图 (Class)
+
+```mermaid
+classDiagram
+    class Animal
+    Vehicle <|-- Car
 ```
 
 ## 6. 自定义容器 (Containers)
