@@ -1,14 +1,7 @@
 import { defineConfig } from 'vitepress'
-import { withMermaid } from 'vitepress-plugin-mermaid'
 import fs from 'node:fs'
 
-export default withMermaid(defineConfig({
-  mermaid: {
-    // refer to mermaidjs.github.io for options
-    startOnLoad: false,
-    securityLevel: 'loose',
-    theme: 'default',
-  },
+export default defineConfig({
   lang: 'zh-CN',
   title: 'MetaUniverse',
   titleTemplate: ':title | MetaUniverse',
@@ -82,6 +75,18 @@ export default withMermaid(defineConfig({
           }
           return defaultRender(tokens, idx, options, env, self);
         };
+
+        // Mermaid 代码块拦截
+        const defaultFence = md.renderer.rules.fence || function(tokens, idx, options, env, self) {
+          return self.renderToken(tokens, idx, options);
+        };
+        md.renderer.rules.fence = (tokens, idx, options, env, self) => {
+          const token = tokens[idx]
+          if (token.info.trim() === 'mermaid') {
+            return `<Mermaid code="${encodeURIComponent(token.content)}" />`
+          }
+          return defaultFence(tokens, idx, options, env, self)
+        }
       }
     },
     
@@ -251,4 +256,4 @@ export default withMermaid(defineConfig({
       ]
     }
   }
-}))
+})

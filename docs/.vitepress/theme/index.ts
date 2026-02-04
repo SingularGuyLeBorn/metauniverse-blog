@@ -21,6 +21,7 @@ import SegmentAnnotation from "./components/features/SegmentAnnotation.vue";
 import CodeSandbox from "./components/features/CodeSandbox.vue";
 import RAGSearch from "./components/features/RAGSearch.vue";
 import RelatedReferences from "./components/features/RelatedReferences.vue";
+import Mermaid from "./components/Mermaid.vue";
 
 export default {
   extends: DefaultTheme,
@@ -58,6 +59,7 @@ export default {
     app.component("SegmentAnnotation", SegmentAnnotation);
     app.component("CodeSandbox", CodeSandbox);
     app.component("RAGSearch", RAGSearch);
+    app.component("Mermaid", Mermaid);
 
     // 客户端初始化
     if (typeof window !== "undefined") {
