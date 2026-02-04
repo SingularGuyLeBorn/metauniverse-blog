@@ -20,9 +20,8 @@ export default defineConfig({
       image: {
         lazyLoading: true // 图片懒加载
       },
-      // 锚点配置
-      anchor: {
-        slugify: (str) => encodeURIComponent(String(str).trim().toLowerCase().replace(/\s+/g, '-')),
+      image: {
+        lazyLoading: true // 图片懒加载
       },
       // 外部链接图标
       externalLinks: {
