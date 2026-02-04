@@ -203,9 +203,11 @@ gantt
 
 ### 7.1 张量可视化 (TensorPlayground)
 
+<!-- 
 <ClientOnly>
   <TensorPlayground></TensorPlayground>
-</ClientOnly>
+</ClientOnly> 
+-->
 
 ### 7.2 语义热力图 (SemanticHeatmap)
 
@@ -213,9 +215,11 @@ gantt
 
 ### 7.3 WASM 沙箱 (CodeSandbox)
 
+<!-- 
 <ClientOnly>
   <CodeSandbox></CodeSandbox>
-</ClientOnly>
+</ClientOnly> 
+-->
 
 ## 8. WikiLinks (双向链接)
 

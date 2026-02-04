@@ -96,7 +96,7 @@ export default defineConfig({
     ['meta', { name: 'theme-color', content: '#0ea5e9' }],
     ['meta', { name: 'mobile-web-app-capable', content: 'yes' }],
     ['meta', { name: 'apple-mobile-web-app-capable', content: 'yes' }], // 保持兼容性
-    ['link', { rel: 'icon', href: '/favicon.ico' }],
+    ['link', { rel: 'icon', href: '/logo.svg' }],
     ['link', { rel: 'preconnect', href: 'https://cdn.jsdelivr.net' }],
     // 初始化脚本 - 避免模式切换闪烁
     ['script', {}, `
