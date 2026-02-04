@@ -28,9 +28,7 @@
 - `行内代码` (Inline Code)
 - ==高亮文本== (Highlight)
 - [链接到 Google](https://google.com)
-- 脚注[^1]
-
-[^1]: 这里是脚注的内容。
+- [链接到 Google](https://google.com)
     
 ### 1.3 列表
 

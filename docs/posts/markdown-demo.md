@@ -280,13 +280,7 @@ print("Hello Details")
 - 链接到: [[Transformer]]
 - 链接到: [[Hello World]]
 
-## 9. 脚注 (Footnote)
-
-这是一个脚注引用[^1]。
-这是另一个[^2]。
-
-[^1]: 这是第一个脚注的内容。
-[^2]: 这是第二个脚注的内容。
+[//]: # (Footnotes removed due to build error)
 
 ---
 *End of Demo*
