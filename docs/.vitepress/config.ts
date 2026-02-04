@@ -20,12 +20,25 @@ export default defineConfig({
       image: {
         lazyLoading: true // 图片懒加载
       },
+      // 锚点配置
+      anchor: {
+        slugify: (str) => encodeURIComponent(String(str).trim().toLowerCase().replace(/\s+/g, '-')),
+      },
+      // 外部链接图标
+      externalLinks: {
+        target: '_blank',
+        rel: 'noopener noreferrer'
+      },
+      // 目录配置
+      toc: {
+        level: [2, 3, 4]
+      },
       container: {
-        tipLabel: '提示',
-        warningLabel: '警告',
-        dangerLabel: '危险',
-        infoLabel: '信息',
-        detailsLabel: '详细信息'
+        tipLabel: '💡 提示',
+        warningLabel: '⚠️ 警告',
+        dangerLabel: '🚨 危险',
+        infoLabel: 'ℹ️ 信息',
+        detailsLabel: '▶️ 详细信息'
       },
       config: (md) => {
         // 自定义 WikiLink 插件 [[Link]] -> <a href="/posts/link">Link</a>
@@ -38,9 +51,7 @@ export default defineConfig({
                   // 排除 [[TOC]]
                   const regex = /\[\[(?!TOC\]\])([^\]|]+)(?:\|[^\]]+)?\]\]/g;
                   let match;
-                  // 简单的文本替换逻辑 (注: 生产环境建议编写完整的 Tokenizer)
-                  // 这里为了简化演示，我们假设 [[ ]] 不会跨 Token 分割
-                  // 实际上 markdown-it 的 text token 可能会被 formatter 分割，但简单场景够用
+                  // 简单的文本替换逻辑
                 }
               }
             }
