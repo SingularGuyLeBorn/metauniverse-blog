@@ -20,9 +20,6 @@ export default defineConfig({
       image: {
         lazyLoading: true // 图片懒加载
       },
-      image: {
-        lazyLoading: true // 图片懒加载
-      },
       // 外部链接图标
       externalLinks: {
         target: '_blank',
