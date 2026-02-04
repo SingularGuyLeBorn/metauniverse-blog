@@ -96,7 +96,7 @@ onMounted(() => {
 <style scoped>
 .semantic-heatmap {
   position: fixed;
-  right: 1rem;
+  left: 1rem;
   top: 50%;
   transform: translateY(-50%);
   width: 30px;
@@ -106,10 +106,13 @@ onMounted(() => {
   z-index: 50;
   opacity: 0.8;
   transition: opacity 0.2s;
+  box-shadow: var(--mu-shadow-md);
+  border: 1px solid var(--vp-c-divider);
 }
 
 .semantic-heatmap:hover {
   opacity: 1;
+  box-shadow: var(--mu-shadow-lg);
 }
 
 .heatmap-header {
