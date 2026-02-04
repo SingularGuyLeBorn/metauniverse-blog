@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitepress'
+import fs from 'node:fs'
 
 export default defineConfig({
   lang: 'zh-CN',
@@ -9,14 +10,85 @@ export default defineConfig({
   lastUpdated: true,
   cleanUrls: true,
   
-  markdown: {
-    theme: {
-      light: 'github-light',
-      dark: 'github-dark'
+    markdown: {
+      theme: {
+        light: 'github-light',
+        dark: 'github-dark'
+      },
+      lineNumbers: true, // 显示行号
+      math: true, // 启用数学公式支持
+      image: {
+        lazyLoading: true // 图片懒加载
+      },
+      container: {
+        tipLabel: '提示',
+        warningLabel: '警告',
+        dangerLabel: '危险',
+        infoLabel: '信息',
+        detailsLabel: '详细信息'
+      },
+      config: (md) => {
+        // 自定义 WikiLink 插件 [[Link]] -> <a href="/posts/link">Link</a>
+        md.core.ruler.push('wiki_link', (state) => {
+          state.tokens.forEach(token => {
+            if (token.type === 'inline' && token.children) {
+              for (let i = 0; i < token.children.length; i++) {
+                const child = token.children[i];
+                if (child.type === 'text' && child.content) {
+                  const regex = /\[\[([^\]|]+)(?:\|[^\]]+)?\]\]/g;
+                  let match;
+                  // 简单的文本替换逻辑 (注: 生产环境建议编写完整的 Tokenizer)
+                  // 这里为了简化演示，我们假设 [[ ]] 不会跨 Token 分割
+                  // 实际上 markdown-it 的 text token 可能会被 formatter 分割，但简单场景够用
+                }
+              }
+            }
+          })
+        })
+        
+        // 使用简单的正则替换插件
+        const defaultRender = md.renderer.rules.text || function(tokens, idx, options, env, self) {
+          return self.renderToken(tokens, idx, options);
+        };
+        
+        md.renderer.rules.text = function(tokens, idx, options, env, self) {
+          const content = tokens[idx].content;
+          if (content.match(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/)) {
+            return content.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (match, p1, p2) => {
+              const link = p1.trim().toLowerCase().replace(/\s+/g, '-');
+              const text = p2 ? p2.trim() : p1.trim();
+              return `<a href="/posts/${link}.html" class="wiki-link">${text}</a>`;
+            });
+          }
+          return defaultRender(tokens, idx, options, env, self);
+        };
+      }
     },
-    lineNumbers: true,
-    math: true
-  },
+    
+    transformPageData(pageData) {
+      // 提取 WikiLinks 到 frontmatter 供图谱使用
+      const pd = pageData as any
+      let content = pd.content
+
+      // 如果 runtime 中 pageData 没有 content，尝试从文件读取
+      if (!content && pd.filePath) {
+        try {
+          content = fs.readFileSync(pd.filePath, 'utf-8')
+        } catch (e) {
+          // ignore error
+        }
+      }
+      content = content || '';
+      const regex = /\[\[([^\]|]+)(?:\|[^\]]+)?\]\]/g;
+      const links = new Set<string>();
+      let match;
+      while ((match = regex.exec(content)) !== null) {
+        links.add(match[1].trim());
+      }
+      
+      pageData.frontmatter.wikiLinks = Array.from(links);
+      pageData.frontmatter.graph = true; // 默认开启图谱
+    },
   
   head: [
     ['meta', { name: 'theme-color', content: '#0ea5e9' }],
@@ -55,7 +127,8 @@ export default defineConfig({
           items: [
             { text: '全部文章', link: '/posts/' },
             { text: 'Hello World', link: '/posts/hello-world' },
-            { text: 'Transformer 架构', link: '/posts/transformer' }
+            { text: 'Transformer 架构', link: '/posts/transformer' },
+            { text: 'Markdown 演示', link: '/posts/markdown-demo' }
           ]
         }
       ],
@@ -138,18 +211,7 @@ export default defineConfig({
     },
     
     build: {
-      chunkSizeWarningLimit: 1000,
-      rollupOptions: {
-        output: {
-          manualChunks: {
-            'vue-vendor': ['vue'],
-            'vueuse': ['@vueuse/core'],
-            'pinia': ['pinia'],
-            'search': ['flexsearch', 'fuse.js'],
-            'graph': ['cytoscape', 'cytoscape-dagre']
-          }
-        }
-      }
+      chunkSizeWarningLimit: 1000
     },
     
     ssr: {
