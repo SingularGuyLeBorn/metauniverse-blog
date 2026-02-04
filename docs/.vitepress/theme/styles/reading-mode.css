@@ -1,0 +1,154 @@
+/* styles/reading-mode.css */
+/* 阅读模式核心样式 - 特性2: 双模布局切换 */
+
+/* ========== 基础变量定义 ========== */
+:root {
+  --rm-mode: 'skimming';
+  --rm-content-width: 740px;
+  --rm-sidebar-width: 0px;
+  --rm-font-size-base: 16px;
+  --rm-line-height: 1.8;
+  --rm-experimental-display: none;
+  --rm-experimental-opacity: 0;
+  --rm-transition-duration: 0.3s;
+  --rm-transition-easing: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ========== 实验模式变量覆盖 ========== */
+[data-reading-mode="experimental"] {
+  --rm-mode: 'experimental';
+  --rm-content-width: min(680px, calc(100vw - 640px));
+  --rm-sidebar-width: 280px;
+  --rm-font-size-base: 15px;
+  --rm-line-height: 1.7;
+  --rm-experimental-display: block;
+  --rm-experimental-opacity: 1;
+}
+
+/* ========== 内容块样式 ========== */
+.content-block {
+  margin: 1.5rem 0;
+  transition: 
+    opacity var(--rm-transition-duration) var(--rm-transition-easing),
+    transform var(--rm-transition-duration) var(--rm-transition-easing);
+}
+
+/* 扫读模式内容 */
+.content-skimming {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+[data-reading-mode="experimental"] .content-skimming {
+  opacity: 0.7;
+  filter: grayscale(0.3);
+}
+
+.content-skimming:hover {
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+/* 实验模式内容 */
+.content-experimental {
+  display: var(--rm-experimental-display);
+  opacity: var(--rm-experimental-opacity);
+  transform: translateY(10px);
+  max-height: 0;
+  overflow: hidden;
+  background: var(--vp-c-bg-soft);
+  border-radius: 8px;
+  padding: 0 1rem;
+}
+
+[data-reading-mode="experimental"] .content-experimental {
+  transform: translateY(0);
+  max-height: none;
+  overflow: visible;
+  padding: 1rem;
+  margin: 1rem 0;
+  animation: slideIn 0.3s ease-out;
+}
+
+/* 两种模式都可见 */
+.content-both {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ========== 行内标记 ========== */
+.inline-skimming {
+  background: linear-gradient(120deg, var(--vp-c-brand-soft) 0%, var(--vp-c-brand-soft) 100%);
+  background-repeat: no-repeat;
+  background-size: 100% 40%;
+  background-position: 0 88%;
+  padding: 0 2px;
+  font-weight: 500;
+}
+
+.inline-experimental {
+  display: var(--rm-experimental-display);
+  background: linear-gradient(120deg, var(--vp-c-tip-soft) 0%, var(--vp-c-tip-soft) 100%);
+  background-repeat: no-repeat;
+  background-size: 100% 40%;
+  background-position: 0 88%;
+  padding: 0 2px;
+}
+
+/* ========== 动画 ========== */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* ========== 响应式适配 ========== */
+@media (max-width: 1024px) {
+  :root,
+  [data-reading-mode="experimental"] {
+    --rm-content-width: 100%;
+    --rm-sidebar-width: 0px;
+  }
+  
+  .content-experimental {
+    display: block;
+    opacity: 0.5;
+    max-height: 100px;
+    overflow: hidden;
+    position: relative;
+  }
+  
+  .content-experimental::after {
+    content: '切换到实验模式查看更多';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 2rem 1rem 1rem;
+    background: linear-gradient(transparent, var(--vp-c-bg-soft));
+    text-align: center;
+    font-size: 0.875rem;
+    color: var(--vp-c-brand-1);
+  }
+  
+  [data-reading-mode="experimental"] .content-experimental {
+    opacity: 1;
+    max-height: none;
+  }
+  
+  [data-reading-mode="experimental"] .content-experimental::after {
+    display: none;
+  }
+}
+
+/* ========== 减少动画偏好 ========== */
+@media (prefers-reduced-motion: reduce) {
+  .content-block {
+    transition: none !important;
+  }
+}
