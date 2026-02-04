@@ -8,6 +8,11 @@ export default withMermaid(defineConfig({
   titleTemplate: ':title | MetaUniverse',
   description: '大模型技术博客 - 探索AI的无限可能',
   
+  mermaid: {
+    // 修复甘特图和饼图渲染问题
+    startOnLoad: false
+  },
+  
   lastUpdated: true,
   cleanUrls: true,
   
