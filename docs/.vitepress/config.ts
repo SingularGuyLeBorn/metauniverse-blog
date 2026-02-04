@@ -1,7 +1,8 @@
 import { defineConfig } from 'vitepress'
+import { withMermaid } from 'vitepress-plugin-mermaid'
 import fs from 'node:fs'
 
-export default defineConfig({
+export default withMermaid(defineConfig({
   lang: 'zh-CN',
   title: 'MetaUniverse',
   titleTemplate: ':title | MetaUniverse',
@@ -244,4 +245,4 @@ export default defineConfig({
       ]
     }
   }
-})
+}))
