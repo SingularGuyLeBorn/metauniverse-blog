@@ -178,9 +178,23 @@ export default defineConfig({
           text: 'CS336 课程笔记',
           items: [
             { text: '课程概览', link: '/knowledge/cs336/' },
-            { text: 'Lecture 1: Intro', link: '/knowledge/cs336/Lecture1/CS336_Lecture1' },
-            { text: 'Lecture 2: Transformer', link: '/knowledge/cs336/Lecture2/CS336_Lecture2' },
-            { text: 'Lecture 3: Scaling', link: '/knowledge/cs336/Lecture3/CS336_Lecture3' }
+            { text: 'L1: Introduction', link: '/knowledge/cs336/Lecture1/Lecture1-Main' },
+            { text: 'L2: Transformations', link: '/knowledge/cs336/Lecture2/Lecture2-Main' },
+            { text: 'L3: Transformer', link: '/knowledge/cs336/Lecture3/Lecture3-Main' },
+            { text: 'L4: Optimization', link: '/knowledge/cs336/Lecture4/Lecture4-Main' },
+            { text: 'L5: Scaling Laws', link: '/knowledge/cs336/Lecture5/Lecture5-Main' },
+            { text: 'L6: Data', link: '/knowledge/cs336/Lecture6/Lecture6-Main' },
+            { text: 'L7: Tokenization', link: '/knowledge/cs336/Lecture7/Lecture7-Main' },
+            { text: 'L8: Pretraining I', link: '/knowledge/cs336/Lecture8/Lecture8-Main' },
+            { text: 'L9: Pretraining II', link: '/knowledge/cs336/Lecture9/Lecture9-Main' },
+            { text: 'L10: Post-training', link: '/knowledge/cs336/Lecture10/Lecture10-Main' },
+            { text: 'L11: Alignment', link: '/knowledge/cs336/Lecture11/Lecture11-Main' },
+            { text: 'L12: RLHF', link: '/knowledge/cs336/Lecture12/Lecture12-Main' },
+            { text: 'L13: Decoding', link: '/knowledge/cs336/Lecture13/Lecture13-Main' },
+            { text: 'L14: Evaluation', link: '/knowledge/cs336/Lecture14/Lecture14-Main' },
+            { text: 'L15: Efficiency', link: '/knowledge/cs336/Lecture15/Lecture15-Main' },
+            { text: 'L16: Moe & sparsely', link: '/knowledge/cs336/Lecture16/Lecture16-Main' },
+            { text: 'L17: Future', link: '/knowledge/cs336/Lecture17/Lecture17-Main' }
           ]
         }
       ],
