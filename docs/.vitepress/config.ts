@@ -168,7 +168,8 @@ export default defineConfig({
           text: 'LLM 从 0 到 1',
           items: [
             { text: '全流程概览', link: '/knowledge/llm-0-to-1/' },
-            // { text: '预训练', link: '/knowledge/llm-0-to-1/pretrain' }
+            // { text: '预训练', link: '/knowledge/llm-0-to-1/pretrain' },
+            { text: 'PPO vs GRPO', link: '/knowledge/llm-0-to-1/ppo-grpo' }
           ]
         }
       ],
@@ -177,7 +178,9 @@ export default defineConfig({
           text: 'CS336 课程笔记',
           items: [
             { text: '课程概览', link: '/knowledge/cs336/' },
-            // { text: 'Lecture 1', link: '/knowledge/cs336/lec1' }
+            { text: 'Lecture 1: Intro', link: '/knowledge/cs336/Lecture1/CS336_Lecture1' },
+            { text: 'Lecture 2: Transformer', link: '/knowledge/cs336/Lecture2/CS336_Lecture2' },
+            { text: 'Lecture 3: Scaling', link: '/knowledge/cs336/Lecture3/CS336_Lecture3' }
           ]
         }
       ],
@@ -186,7 +189,7 @@ export default defineConfig({
           text: 'DeepSeek 分析',
           items: [
             { text: '模型概览', link: '/knowledge/deepseek/' },
-            // { text: 'DeepSeek-V2', link: '/knowledge/deepseek/v2' }
+            { text: 'DeepSeek-V2 Architecture', link: '/knowledge/deepseek/v2-analysis' }
           ]
         }
       ],
