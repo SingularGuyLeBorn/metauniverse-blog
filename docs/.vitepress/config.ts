@@ -200,10 +200,14 @@ export default defineConfig({
       ],
       '/knowledge/deepseek/': [
         {
-          text: 'DeepSeek 分析',
+          text: 'DeepSeek 知识库',
           items: [
-            { text: '模型概览', link: '/knowledge/deepseek/' },
-            { text: 'DeepSeek-V2 Architecture', link: '/knowledge/deepseek/v2-analysis' }
+            { text: '首页', link: '/knowledge/deepseek/' },
+            { text: '00 项目规划', link: '/knowledge/deepseek/00-项目规划' },
+            { text: '01 论文精读方法论', link: '/knowledge/deepseek/01-论文精读方法论' },
+            { text: '02 时间线与脉络梳理', link: '/knowledge/deepseek/02-时间线与脉络梳理' },
+            { text: '03 开源项目分析', link: '/knowledge/deepseek/03-开源项目分析' },
+            { text: '04 图文笔记制作', link: '/knowledge/deepseek/04-图文并茂笔记制作' }
           ]
         }
       ],
