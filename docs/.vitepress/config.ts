@@ -1,5 +1,16 @@
 import { defineConfig } from 'vitepress'
 import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { generateFullSidebar } from './utils/sidebar'
+
+// 获取 docs 目录路径
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const docsDir = path.resolve(__dirname, '..')
+
+// 自动生成 sidebar
+const autoSidebar = generateFullSidebar(docsDir)
+
 
 export default defineConfig({
   lang: 'zh-CN',
@@ -138,15 +149,9 @@ export default defineConfig({
     
     nav: [
       { text: '首页', link: '/' },
+      { text: '技术文章', link: '/posts/' },
       { text: '论文阅读', link: '/papers/' },
-      { 
-        text: '知识库', 
-        items: [
-          { text: 'LLM 0到1', link: '/knowledge/llm-0-to-1/' },
-          { text: 'CS336 课程', link: '/knowledge/cs336/' },
-          { text: 'DeepSeek 分析', link: '/knowledge/deepseek/' }
-        ]
-      },
+      { text: '知识库', link: '/knowledge/' },
       { text: '杂谈', link: '/essays/' },
       { text: '随想', link: '/thoughts/' },
       { text: '年度总结', link: '/yearly/' },
@@ -154,102 +159,13 @@ export default defineConfig({
     ],
     
     sidebar: {
-      '/papers/': [
-        {
-          text: '论文阅读',
-          items: [
-            { text: '首页', link: '/papers/' },
-            // Example: { text: 'Attention Is All You Need', link: '/papers/transformer' }
-          ]
-        }
-      ],
-      '/knowledge/llm-0-to-1/': [
-        {
-          text: 'LLM 从 0 到 1',
-          items: [
-            { text: '全流程概览', link: '/knowledge/llm-0-to-1/' },
-            // { text: '预训练', link: '/knowledge/llm-0-to-1/pretrain' },
-            { text: 'PPO vs GRPO', link: '/knowledge/llm-0-to-1/ppo-grpo' }
-          ]
-        }
-      ],
-      '/knowledge/cs336/': [
-        {
-          text: 'CS336 课程笔记',
-          items: [
-            { text: '课程概览', link: '/knowledge/cs336/' },
-            { text: 'L1: Introduction', link: '/knowledge/cs336/Lecture1/Lecture1-Main' },
-            { text: 'L2: Transformations', link: '/knowledge/cs336/Lecture2/Lecture2-Main' },
-            { text: 'L3: Transformer', link: '/knowledge/cs336/Lecture3/Lecture3-Main' },
-            { text: 'L4: Optimization', link: '/knowledge/cs336/Lecture4/Lecture4-Main' },
-            { text: 'L5: Scaling Laws', link: '/knowledge/cs336/Lecture5/Lecture5-Main' },
-            { text: 'L6: Data', link: '/knowledge/cs336/Lecture6/Lecture6-Main' },
-            { text: 'L7: Tokenization', link: '/knowledge/cs336/Lecture7/Lecture7-Main' },
-            { text: 'L8: Pretraining I', link: '/knowledge/cs336/Lecture8/Lecture8-Main' },
-            { text: 'L9: Pretraining II', link: '/knowledge/cs336/Lecture9/Lecture9-Main' },
-            { text: 'L10: Post-training', link: '/knowledge/cs336/Lecture10/Lecture10-Main' },
-            { text: 'L11: Alignment', link: '/knowledge/cs336/Lecture11/Lecture11-Main' },
-            { text: 'L12: RLHF', link: '/knowledge/cs336/Lecture12/Lecture12-Main' },
-            { text: 'L13: Decoding', link: '/knowledge/cs336/Lecture13/Lecture13-Main' },
-            { text: 'L14: Evaluation', link: '/knowledge/cs336/Lecture14/Lecture14-Main' },
-            { text: 'L15: Efficiency', link: '/knowledge/cs336/Lecture15/Lecture15-Main' },
-            { text: 'L16: Moe & sparsely', link: '/knowledge/cs336/Lecture16/Lecture16-Main' },
-            { text: 'L17: Future', link: '/knowledge/cs336/Lecture17/Lecture17-Main' }
-          ]
-        }
-      ],
-      '/knowledge/deepseek/': [
-        {
-          text: 'DeepSeek 知识库',
-          items: [
-            { text: '首页', link: '/knowledge/deepseek/' },
-            { text: '00 项目规划', link: '/knowledge/deepseek/00-项目规划' },
-            { text: '01 论文精读方法论', link: '/knowledge/deepseek/01-论文精读方法论' },
-            { text: '02 时间线与脉络梳理', link: '/knowledge/deepseek/02-时间线与脉络梳理' },
-            { text: '03 开源项目分析', link: '/knowledge/deepseek/03-开源项目分析' },
-            { text: '04 图文笔记制作', link: '/knowledge/deepseek/04-图文并茂笔记制作' }
-          ]
-        }
-      ],
-      '/essays/': [
-        {
-          text: '杂谈',
-          items: [
-            { text: '全部文章', link: '/essays/' }
-          ]
-        }
-      ],
-      '/thoughts/': [
-        {
-          text: '随想',
-          items: [
-            { text: '全部随想', link: '/thoughts/' }
-          ]
-        }
-      ],
-      '/yearly/': [
-        {
-          text: '年度总结',
-          items: [
-            { text: '历年总结', link: '/yearly/' }
-          ]
-        }
-      ],
+      ...autoSidebar,
+      // about 页面保持静态配置
       '/about/': [
         {
-          text: '关于',
+          text: '关于我',
           items: [
-            { text: '关于我', link: '/about/' }
-          ]
-        }
-      ],
-      // Fallback sidebar
-      '/': [
-        {
-          text: '近期更新',
-          items: [
-            { text: 'Markdown 演示', link: '/posts/markdown-demo' },
-            { text: 'Transformer 架构', link: '/posts/transformer' }
+            { text: '个人档案', link: '/about/' }
           ]
         }
       ]

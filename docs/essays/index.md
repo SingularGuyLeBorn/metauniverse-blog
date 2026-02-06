@@ -1,6 +1,9 @@
-# 杂谈 (Essays)
+---
+title: 杂谈
+layout: page
+sidebar: false
+---
 
-技术之外的观察与思考，包括行业趋势、产品体验等。
-
-## 最新文章
-- (暂无内容)
+<ClientOnly>
+  <EssaysDashboard />
+</ClientOnly>

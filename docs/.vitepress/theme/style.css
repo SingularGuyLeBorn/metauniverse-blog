@@ -2,231 +2,166 @@
    MetaUniverse 博客 - 全局样式
    ============================================ */
 
-/* CSS变量定义 */
+/* === CSS 变量 === */
 :root {
   /* 主题色 */
-  --mu-primary-50: #f0f9ff;
-  --mu-primary-100: #e0f2fe;
   --mu-primary-500: #0ea5e9;
   --mu-primary-600: #0284c7;
-  --mu-primary-900: #0c4a6e;
-
-  /* 强调色 */
-  --mu-accent-500: #d946ef;
-  --mu-accent-600: #c026d3;
-
-  /* 布局变量 */
+  
+  /* 布局变量 - 这些由 JS 动态更新 */
   --mu-sidebar-width: 280px;
-  --mu-content-max-width: 900px;
-  --mu-wide-content-max-width: 1200px;
-
-  /* 间距 */
-  --mu-space-xs: 0.25rem;
-  --mu-space-sm: 0.5rem;
-  --mu-space-md: 1rem;
-  --mu-space-lg: 1.5rem;
-  --mu-space-xl: 2rem;
-
-  /* 圆角 */
-  --mu-radius-sm: 0.375rem;
-  --mu-radius-md: 0.5rem;
-  --mu-radius-lg: 0.75rem;
-
-  /* 阴影 */
-  --mu-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --mu-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-  --mu-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
-
-  /* 过渡 */
-  --mu-transition-fast: 150ms ease;
-  --mu-transition-normal: 250ms ease;
+  --mu-aside-width: 224px;
+  
+  /* 同步 VitePress */
+  --vp-sidebar-width: var(--mu-sidebar-width);
 }
 
-/* 暗色模式变量 */
-.dark {
-  --mu-bg-primary: #0f172a;
-  --mu-bg-secondary: #1e293b;
-  --mu-bg-tertiary: #334155;
-  --mu-text-primary: #f8fafc;
-  --mu-text-secondary: #cbd5e1;
-  --mu-border-color: #334155;
+/* === 顶部导航栏 (绝对固定，不受任何影响) === */
+.VPNavBar {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  height: 64px !important;
+  z-index: 100 !important; /* 最高层级 */
+  background-color: var(--vp-c-bg) !important;
+  border-bottom: 1px solid var(--vp-c-divider) !important;
 }
 
-/* 浅色模式变量 */
-:root:not(.dark) {
-  --mu-bg-primary: #ffffff;
-  --mu-bg-secondary: #f8fafc;
-  --mu-bg-tertiary: #f1f5f9;
-  --mu-text-primary: #0f172a;
-  --mu-text-secondary: #475569;
-  --mu-border-color: #e2e8f0;
-}
-
-/* ============================================
-   布局模式
-   ============================================ */
-
-/* 默认布局 */
-[data-layout="default"] {
-  --mu-content-width: var(--mu-content-max-width);
-}
-
-/* 专注模式 */
-[data-layout="focus"] {
-  --mu-content-width: 680px;
-  --mu-sidebar-width: 0px;
-}
-
-[data-layout="focus"] .VPSidebar {
-  display: none;
-}
-
-/* 宽屏模式 */
-[data-layout="wide"] {
-  --mu-content-width: var(--mu-wide-content-max-width);
-}
-
-[data-layout="wide"] .VPContent {
-  max-width: none;
-}
-
-/* ============================================
-   VitePress 样式覆盖
-   ============================================ */
-
-/* 导航栏 */
-.VPNav {
-  backdrop-filter: blur(12px);
-}
-
-/* 文档样式 */
-.vp-doc h1,
-.vp-doc h2,
-.vp-doc h3 {
-  font-weight: 600;
-  letter-spacing: -0.025em;
-}
-
-.vp-doc h2 {
-  border-bottom: 1px solid var(--mu-border-color);
-  padding-bottom: 0.5rem;
-}
-
-.vp-doc a {
-  color: var(--mu-primary-500);
-  transition: color var(--mu-transition-fast);
-}
-
-.vp-doc a:hover {
-  color: var(--mu-primary-600);
-}
-
-.vp-doc blockquote {
-  border-left: 4px solid var(--mu-primary-500);
-  background: var(--mu-bg-secondary);
-  padding: 1rem 1.5rem;
-  border-radius: 0 var(--mu-radius-md) var(--mu-radius-md) 0;
-}
-
-/* 代码块 */
-.vp-doc div[class*="language-"] {
-  border-radius: var(--mu-radius-lg);
-  background: var(--mu-bg-secondary);
-}
-
-/* ============================================
-   Wiki链接样式
-   ============================================ */
-
-.wiki-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  color: var(--mu-primary-500);
-  background: var(--mu-primary-50);
-  padding: 0.125rem 0.5rem;
-  border-radius: var(--mu-radius-sm);
-  font-size: 0.875em;
-  font-weight: 500;
-  transition: all var(--mu-transition-fast);
-}
-
-.dark .wiki-link {
-  background: var(--mu-primary-900);
-}
-
-.wiki-link:hover {
-  background: var(--mu-primary-100);
-  color: var(--mu-primary-600);
-}
-
-/* ============================================
-   热力图段落样式
-   ============================================ */
-
-.heatmap-paragraph {
-  position: relative;
-  transition: background-color 0.3s ease;
-}
-
-.heatmap-paragraph[data-heat] {
-  border-left: 3px solid transparent;
-  padding-left: 0.5rem;
-  margin-left: -0.5rem;
-}
-
-/* ============================================
-   知识图谱容器
-   ============================================ */
-
-.knowledge-graph-container {
-  margin: 1rem 0;
-  padding: 1rem;
-  background: var(--mu-bg-secondary);
-  border-radius: var(--mu-radius-lg);
-  border: 1px solid var(--mu-border-color);
-}
-
-/* ============================================
-   动画效果
-   ============================================ */
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
+/* === 左侧边栏 === */
+@media (min-width: 960px) {
+  .VPSidebar {
+    position: fixed !important;
+    top: 64px !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    width: var(--mu-sidebar-width) !important;
+    background-color: var(--vp-c-bg) !important;
+    border-right: 1px solid var(--vp-c-divider) !important;
+    overflow-y: auto !important;
+    z-index: 20 !important;
   }
 }
 
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+/* 左侧边栏隐藏 */
+.mu-left-hidden .VPSidebar {
+  transform: translateX(-100%) !important;
+  pointer-events: none !important;
+}
+
+.mu-left-hidden .VPContent.has-sidebar {
+  padding-left: 0 !important;
+}
+
+/* === 右侧大纲 === */
+@media (min-width: 1280px) {
+  .VPDocAside {
+    position: fixed !important;
+    top: 64px !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: var(--mu-aside-width) !important;
+    background-color: var(--vp-c-bg) !important;
+    border-left: 1px solid var(--vp-c-divider) !important;
+    overflow-y: auto !important;
+    padding: 16px !important;
+    z-index: 20 !important;
   }
 }
 
-.animate-fade-in {
-  animation: fadeIn 0.3s ease-out;
+/* 右侧大纲隐藏 */
+.mu-right-hidden .VPDocAside {
+  transform: translateX(100%) !important;
+  pointer-events: none !important;
 }
 
-.animate-slide-up {
-  animation: slideUp 0.3s ease-out;
+.mu-right-hidden .VPContent {
+  padding-right: 0 !important;
 }
 
-/* ============================================
-   打印样式
-   ============================================ */
-
-@media print {
-  .VPNav,
-  .VPSidebar,
-  .mode-switcher {
-    display: none !important;
+/* === 中间内容区 (流式填充) === */
+@media (min-width: 960px) {
+  .VPContent.has-sidebar {
+    padding-left: var(--mu-sidebar-width) !important;
   }
+}
+
+@media (min-width: 1280px) {
+  .VPContent {
+    padding-right: var(--mu-aside-width) !important;
+  }
+  
+  .VPDoc .container {
+    max-width: 100% !important;
+    padding: 32px 48px !important;
+  }
+}
+
+/* === 内容宽度模式 === */
+[data-content-width="narrow"] .VPDoc .container {
+  max-width: 680px !important;
+  margin: 0 auto !important;
+}
+
+[data-content-width="half"] .VPDoc .container {
+  max-width: 900px !important;
+  margin: 0 auto !important;
+}
+
+[data-content-width="full"] .VPDoc .container {
+  max-width: 100% !important;
+}
+
+/* === 平滑过渡 === */
+.VPSidebar,
+.VPContent,
+.VPDocAside {
+  transition: transform 0.3s ease, padding 0.3s ease, width 0.3s ease;
+}
+
+/* 拖拽时禁用过渡 */
+.is-resizing .VPSidebar,
+.is-resizing .VPContent,
+.is-resizing .VPDocAside {
+  transition: none !important;
+}
+
+/* === 侧边栏工具栏 === */
+.sidebar-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  padding: 12px 16px;
+  background-color: var(--vp-c-bg);
+  border-bottom: 1px solid var(--vp-c-divider);
+}
+
+/* === 侧边栏视觉增强 === */
+.VPSidebarItem .caret {
+  display: flex !important;
+  opacity: 0.6 !important;
+  color: var(--vp-c-text-2) !important;
+}
+
+.VPSidebarItem .text {
+  font-size: 13.5px !important;
+}
+
+.VPSidebarItem.level-0 > .item .text {
+  font-weight: 600 !important;
+}
+
+/* 激活状态 */
+.VPSidebarItem.is-active > .item {
+  background-color: var(--vp-c-bg-soft);
+  color: var(--vp-c-brand-1) !important;
+  border-left: 3px solid var(--vp-c-brand-1);
+  border-radius: 0 4px 4px 0;
+}
+
+/* === 标题样式 === */
+.vp-doc h1 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }

@@ -26,6 +26,17 @@ import HomeHero from "./components/HomeHero.vue";
 import AboutProfile from "./components/AboutProfile.vue";
 import ScrollProgress from "./components/features/ScrollProgress.vue";
 import NotFound from "./components/NotFound.vue";
+import ArticleIndex from "./components/ArticleIndex.vue";
+import KnowledgeDashboard from "./components/KnowledgeDashboard.vue";
+import SectionDashboard from "./components/SectionDashboard.vue";
+import PostsDashboard from "./components/PostsDashboard.vue";
+import PapersDashboard from "./components/PapersDashboard.vue";
+import EssaysDashboard from "./components/EssaysDashboard.vue";
+import ThoughtsDashboard from "./components/ThoughtsDashboard.vue";
+import YearlyDashboard from "./components/YearlyDashboard.vue";
+import ResizableLayout from "./components/features/ResizableLayout.vue";
+import LayoutToolbar from "./components/features/LayoutToolbar.vue";
+import SidebarToolbar from "./components/features/SidebarToolbar.vue";
 
 export default {
   extends: DefaultTheme,
@@ -35,8 +46,14 @@ export default {
     const { frontmatter } = useData();
 
     return h(DefaultTheme.Layout, null, {
+      // 侧边栏顶部工具栏 - Injected here
+      "sidebar-nav-before": () => h(SidebarToolbar),
+
       // 顶部阅读进度条
       "layout-top": () => h(ScrollProgress),
+      
+      // 导航栏右侧 - 布局工具栏
+      "nav-bar-content-after": () => h(LayoutToolbar),
       
       // 布局底部插槽 - 模式切换器和热力图
       "layout-bottom": () =>
@@ -70,7 +87,15 @@ export default {
     app.component("Mermaid", Mermaid);
     app.component("HomeHero", HomeHero);
     app.component("AboutProfile", AboutProfile);
-
+    app.component("ArticleIndex", ArticleIndex);
+    app.component("KnowledgeDashboard", KnowledgeDashboard);
+    app.component("SectionDashboard", SectionDashboard);
+    app.component("PostsDashboard", PostsDashboard);
+    app.component("PapersDashboard", PapersDashboard);
+    app.component("EssaysDashboard", EssaysDashboard);
+    app.component("ThoughtsDashboard", ThoughtsDashboard);
+    app.component("YearlyDashboard", YearlyDashboard);
+    app.component("ResizableLayout", ResizableLayout);
     // 客户端初始化
     if (typeof window !== "undefined") {
       // 初始化应用状态

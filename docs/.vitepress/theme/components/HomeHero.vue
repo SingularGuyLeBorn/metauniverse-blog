@@ -31,6 +31,19 @@
 
     <div class="dashboard-container">
       <div class="dashboard-grid">
+        <a href="/posts/" class="dashboard-card posts">
+          <div class="card-content">
+            <div class="card-icon-wrapper">
+              <span class="card-icon">✍️</span>
+            </div>
+            <div class="card-text">
+              <h3>技术文章</h3>
+              <p>Transformer、RLHF 等深度技术解析</p>
+            </div>
+            <div class="card-arrow">→</div>
+          </div>
+        </a>
+        
         <a href="/papers/" class="dashboard-card papers">
           <div class="card-content">
             <div class="card-icon-wrapper">
@@ -57,10 +70,23 @@
           </div>
         </a>
         
+        <a href="/posts/features-demo" class="dashboard-card features">
+          <div class="card-content">
+            <div class="card-icon-wrapper">
+              <span class="card-icon">🧪</span>
+            </div>
+            <div class="card-text">
+              <h3>实验特性</h3>
+              <p>八大交互功能 Demo 演示</p>
+            </div>
+            <div class="card-arrow">→</div>
+          </div>
+        </a>
+
         <a href="/essays/" class="dashboard-card essays">
           <div class="card-content">
             <div class="card-icon-wrapper">
-              <span class="card-icon">✍️</span>
+              <span class="card-icon">💬</span>
             </div>
             <div class="card-text">
               <h3>杂谈</h3>
@@ -328,7 +354,7 @@ onUnmounted(() => {
 
 .dashboard-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 1.5rem;
 }
 
@@ -462,6 +488,10 @@ html.dark .dashboard-card:hover .card-icon-wrapper {
 }
 
 /* Responsive */
+@media (max-width: 1024px) {
+  .dashboard-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
 @media (max-width: 768px) {
   .hero-title { font-size: 3rem; }
   .dashboard-grid { grid-template-columns: 1fr; }

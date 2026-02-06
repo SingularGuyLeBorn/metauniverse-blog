@@ -1,23 +1,9 @@
-# 📝 文章列表
+---
+title: 技术文章
+layout: page
+sidebar: false
+---
 
-这里是我的所有技术文章。
-
-## 最新文章
-
-- [第一篇博客 - Hello World](./hello-world.md)
-
-## 分类
-
-### 🧠 大模型
-
-_即将更新..._
-
-### 🚀 项目实战
-
-_即将更新..._
-
-### 📚 学习笔记
-
-_即将更新..._
-
-11111
+<ClientOnly>
+  <PostsDashboard />
+</ClientOnly>
