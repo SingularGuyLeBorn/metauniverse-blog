@@ -46,6 +46,7 @@ const collapseAll = (): void => {
 
 /**
  * 定位并展开到当前激活的文档
+ * 会自动展开所有折叠的父级分组
  */
 const locateCurrent = async (): Promise<void> => {
   await nextTick()
@@ -55,25 +56,49 @@ const locateCurrent = async (): Promise<void> => {
     const activeItem = document.querySelector('.VPSidebarItem.is-active')
     if (!activeItem) return
     
-    // 1. 先展开所有父级分组
-    let parent = activeItem.parentElement
-    while (parent) {
-      if (parent.classList.contains('VPSidebar')) break
+    // 1. 收集所有需要展开的父级分组
+    const parentsToExpand: HTMLElement[] = []
+    let current: Element | null = activeItem
+    
+    while (current) {
+      // 向上查找最近的可折叠父级
+      const parentEl = current.parentElement?.closest('.VPSidebarItem.collapsible') as HTMLElement | null
+      if (!parentEl) break
       
-      // 找到包含此节点的可折叠分组
-      const collapsibleParent = parent.closest('.VPSidebarItem.collapsible')
-      if (collapsibleParent && collapsibleParent.classList.contains('collapsed')) {
-        const button = collapsibleParent.querySelector('.item') as HTMLElement
-        if (button) button.click()
+      // 如果是折叠状态，加入待展开列表
+      if (parentEl.classList.contains('collapsed')) {
+        parentsToExpand.unshift(parentEl) // 从最外层开始展开
       }
       
-      parent = parent.parentElement
+      current = parentEl
     }
     
-    // 2. 滚动到激活项
-    setTimeout(() => {
+    // 2. 依次展开所有父级 (从外到内)
+    const expandWithDelay = (index: number) => {
+      if (index >= parentsToExpand.length) {
+        // 所有父级展开完成后，滚动到激活项
+        setTimeout(() => {
+          activeItem.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }, 100)
+        return
+      }
+      
+      const group = parentsToExpand[index]
+      const button = group.querySelector(':scope > .item') as HTMLElement
+      if (button) {
+        button.click()
+      }
+      
+      // 等待动画完成后展开下一个
+      setTimeout(() => expandWithDelay(index + 1), 50)
+    }
+    
+    if (parentsToExpand.length > 0) {
+      expandWithDelay(0)
+    } else {
+      // 没有需要展开的父级，直接滚动
       activeItem.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    }, 100)
+    }
   }, 200)
 }
 
@@ -139,13 +164,14 @@ watch(
 <style scoped>
 .sidebar-toolbar {
   display: flex;
-  justify-content: flex-end;
-  padding: 12px 16px;
+  justify-content: center; /* 居中显示按钮 */
+  padding: 8px 12px;
   background-color: var(--vp-c-bg);
   border-bottom: 1px solid var(--vp-c-divider);
   position: sticky;
   top: 0;
   z-index: 20;
+  gap: 4px;
 }
 
 .toolbar-actions {

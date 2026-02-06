@@ -1,146 +1,27 @@
 <script setup lang="ts">
 /**
- * Layout Toolbar - 完全重写
+ * Layout Toolbar
  * 
- * 核心逻辑：
- * 1. 顶部栏绝对不受影响 (z-index: 100)
- * 2. 左侧栏左边缘 = 浏览器左边缘
- * 3. 右侧栏右边缘 = 浏览器右边缘
- * 4. 分割线只调整侧栏宽度，不移动侧栏位置
+ * 职责：
+ * 1. 提供布局控制按钮 (切换侧边栏、内容宽度)
+ * 2. 状态完全由 stores/layout.ts 管理
+ * 3. 不包含任何拖拽/Resize 逻辑
  */
-import { ref, computed, onMounted, watch, onUnmounted, nextTick } from 'vue'
+import { ref, computed } from 'vue'
 import { useData } from 'vitepress'
+import { useLayoutStore } from '../../stores/layout'
 import FindInPage from './FindInPage.vue'
 
-// Constants
-const STORAGE_KEY = 'mu-layout-state-v2'
-const MIN_SIDEBAR_WIDTH = 200
-const MAX_SIDEBAR_WIDTH = 500
-const MIN_ASIDE_WIDTH = 180
-const MAX_ASIDE_WIDTH = 400
-
-// State
-interface LayoutState {
-  leftVisible: boolean
-  rightVisible: boolean
-  leftWidth: number
-  rightWidth: number
-  contentWidth: 'narrow' | 'half' | 'full'
-}
-
-const state = ref<LayoutState>({
-  leftVisible: true,
-  rightVisible: true,
-  leftWidth: 280,
-  rightWidth: 224,
-  contentWidth: 'half'
-})
-
-const isResizing = ref(false)
-const resizingSide = ref<'left' | 'right' | null>(null)
+const layoutStore = useLayoutStore()
 const showFind = ref(false)
 
 const { page, frontmatter } = useData()
 
+// 仅在非首页且非索引页显示
 const isDocPage = computed(() => {
   return page.value.relativePath &&
          !page.value.relativePath.endsWith('index.md') &&
          frontmatter.value.layout !== 'home'
-})
-
-// 应用布局到 CSS 变量
-const applyLayout = (): void => {
-  if (typeof document === 'undefined') return
-  
-  const root = document.documentElement
-  
-  // 设置宽度变量
-  root.style.setProperty('--mu-sidebar-width', state.value.leftVisible ? `${state.value.leftWidth}px` : '0px')
-  root.style.setProperty('--mu-aside-width', state.value.rightVisible ? `${state.value.rightWidth}px` : '0px')
-  
-  // 设置内容宽度属性
-  root.setAttribute('data-content-width', state.value.contentWidth)
-  
-  // 设置状态类
-  root.classList.toggle('mu-left-hidden', !state.value.leftVisible)
-  root.classList.toggle('mu-right-hidden', !state.value.rightVisible)
-  root.classList.toggle('is-resizing', isResizing.value)
-}
-
-// 切换侧边栏
-const toggleLeft = (): void => {
-  state.value.leftVisible = !state.value.leftVisible
-  applyLayout()
-}
-
-const toggleRight = (): void => {
-  state.value.rightVisible = !state.value.rightVisible
-  applyLayout()
-}
-
-const setContentWidth = (width: 'narrow' | 'half' | 'full'): void => {
-  state.value.contentWidth = width
-  applyLayout()
-}
-
-// ============ 拖拽逻辑 (完全重写) ============
-
-const startResize = (side: 'left' | 'right', e: MouseEvent): void => {
-  e.preventDefault()
-  isResizing.value = true
-  resizingSide.value = side
-  applyLayout()
-  
-  document.addEventListener('mousemove', handleResize)
-  document.addEventListener('mouseup', stopResize)
-}
-
-const handleResize = (e: MouseEvent): void => {
-  if (!resizingSide.value) return
-  
-  if (resizingSide.value === 'left') {
-    // 左侧栏宽度 = 鼠标X坐标 (因为左边缘在0)
-    const newWidth = Math.max(MIN_SIDEBAR_WIDTH, Math.min(e.clientX, MAX_SIDEBAR_WIDTH))
-    state.value.leftWidth = newWidth
-  } else {
-    // 右侧栏宽度 = 屏幕宽度 - 鼠标X坐标 (因为右边缘在屏幕最右)
-    const screenWidth = window.innerWidth
-    const newWidth = Math.max(MIN_ASIDE_WIDTH, Math.min(screenWidth - e.clientX, MAX_ASIDE_WIDTH))
-    state.value.rightWidth = newWidth
-  }
-  
-  applyLayout()
-}
-
-const stopResize = (): void => {
-  isResizing.value = false
-  resizingSide.value = null
-  applyLayout()
-  
-  document.removeEventListener('mousemove', handleResize)
-  document.removeEventListener('mouseup', stopResize)
-}
-
-// 持久化
-watch(state, (val) => {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(val))
-  }
-}, { deep: true })
-
-onMounted(() => {
-  const saved = localStorage.getItem(STORAGE_KEY)
-  if (saved) {
-    try {
-      Object.assign(state.value, JSON.parse(saved))
-    } catch (e) { /* ignore */ }
-  }
-  nextTick(() => applyLayout())
-})
-
-onUnmounted(() => {
-  document.removeEventListener('mousemove', handleResize)
-  document.removeEventListener('mouseup', stopResize)
 })
 </script>
 
@@ -148,27 +29,61 @@ onUnmounted(() => {
   <div v-if="isDocPage" class="layout-controller">
     <!-- 顶部工具栏 -->
     <div class="layout-toolbar">
-      <button class="btn" @click="toggleLeft" :class="{ active: state.leftVisible }" title="切换侧边栏">
+      <!-- 左侧边栏切换 -->
+      <button 
+        class="btn" 
+        @click="layoutStore.toggleLeft()" 
+        :class="{ active: layoutStore.leftVisible }" 
+        title="切换侧边栏 (Left Sidebar)"
+      >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <rect x="3" y="3" width="18" height="18" rx="2"/>
           <line x1="9" y1="3" x2="9" y2="21"/>
         </svg>
       </button>
 
+      <!-- 内容宽度切换 -->
       <div class="width-group">
-        <button class="width-btn" :class="{ active: state.contentWidth === 'narrow' }" @click="setContentWidth('narrow')">窄</button>
-        <button class="width-btn" :class="{ active: state.contentWidth === 'half' }" @click="setContentWidth('half')">中</button>
-        <button class="width-btn" :class="{ active: state.contentWidth === 'full' }" @click="setContentWidth('full')">宽</button>
+        <button 
+          class="width-btn" 
+          :class="{ active: layoutStore.contentWidth === 'narrow' }" 
+          @click="layoutStore.setContentWidth('narrow')"
+          title="窄模式"
+        >窄</button>
+        <button 
+          class="width-btn" 
+          :class="{ active: layoutStore.contentWidth === 'half' }" 
+          @click="layoutStore.setContentWidth('half')"
+          title="标准模式"
+        >中</button>
+        <button 
+          class="width-btn" 
+          :class="{ active: layoutStore.contentWidth === 'full' }" 
+          @click="layoutStore.setContentWidth('full')"
+          title="宽模式"
+        >宽</button>
       </div>
 
-      <button class="btn" @click="toggleRight" :class="{ active: state.rightVisible }" title="切换大纲">
+      <!-- 右侧边栏切换 -->
+      <button 
+        class="btn" 
+        @click="layoutStore.toggleRight()" 
+        :class="{ active: layoutStore.rightVisible }" 
+        title="切换大纲 (Right Sidebar)"
+      >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <rect x="3" y="3" width="18" height="18" rx="2"/>
           <line x1="15" y1="3" x2="15" y2="21"/>
         </svg>
       </button>
 
-      <button class="btn" @click="showFind = !showFind" :class="{ active: showFind }" title="查找">
+      <!-- 查找工具 -->
+      <button 
+        class="btn" 
+        @click="showFind = !showFind" 
+        :class="{ active: showFind }" 
+        title="页内查找"
+      >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <circle cx="11" cy="11" r="8"/>
           <line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -178,26 +93,6 @@ onUnmounted(() => {
 
     <Teleport to="body">
       <FindInPage v-if="showFind" @close="showFind = false" />
-
-      <!-- 左侧分割线：位置 = 左侧栏宽度 -->
-      <div
-        v-if="state.leftVisible"
-        class="resizer resizer-left"
-        :style="{ left: state.leftWidth + 'px' }"
-        @mousedown="startResize('left', $event)"
-      >
-        <div class="resizer-handle"></div>
-      </div>
-
-      <!-- 右侧分割线：位置 = 右侧边距 -->
-      <div
-        v-if="state.rightVisible"
-        class="resizer resizer-right"
-        :style="{ right: state.rightWidth + 'px' }"
-        @mousedown="startResize('right', $event)"
-      >
-        <div class="resizer-handle"></div>
-      </div>
     </Teleport>
   </div>
 </template>
@@ -221,8 +116,9 @@ onUnmounted(() => {
   border-radius: 6px;
   color: var(--vp-c-text-2);
   cursor: pointer;
+  transition: all 0.2s;
 }
-.btn:hover { background: var(--vp-c-bg-soft); }
+.btn:hover { background: var(--vp-c-bg-soft); color: var(--vp-c-text-1); }
 .btn.active { color: var(--vp-c-brand-1); background: var(--vp-c-bg-soft); }
 
 .width-group {
@@ -241,39 +137,9 @@ onUnmounted(() => {
   font-size: 12px;
   color: var(--vp-c-text-3);
   cursor: pointer;
+  transition: all 0.2s;
 }
 .width-btn:hover { color: var(--vp-c-text-2); }
-.width-btn.active { background: var(--vp-c-bg); color: var(--vp-c-brand-1); }
-
-/* 分割线 - 关键样式 */
-.resizer {
-  position: fixed;
-  top: 64px; /* 从导航栏下方开始，绝不影响顶部 */
-  bottom: 0;
-  width: 8px;
-  cursor: col-resize;
-  z-index: 50;
-  display: flex;
-  justify-content: center;
-}
-
-.resizer-left {
-  transform: translateX(-50%);
-}
-
-.resizer-right {
-  transform: translateX(50%);
-}
-
-.resizer-handle {
-  width: 2px;
-  height: 100%;
-  background: transparent;
-  transition: background 0.2s;
-}
-
-.resizer:hover .resizer-handle {
-  background: var(--vp-c-brand-1);
-  opacity: 0.5;
-}
+.width-btn.active { background: var(--vp-c-bg); color: var(--vp-c-brand-1); font-weight: 500; }
 </style>
+

@@ -1,46 +1,31 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch, provide, h } from 'vue'
+/**
+ * MuLayout - 博客主布局组件
+ * 
+ * 职责：
+ * 1. 提供基础布局结构
+ * 2. 状态管理完全由 stores/layout.ts 负责
+ * 3. 分割线由 GlobalLayoutControl.vue 渲染 (Teleport to body)
+ * 
+ * 不再包含：
+ * - 独立的 layoutState (已迁移到 Pinia)
+ * - 拖拽逻辑 (由 GlobalLayoutControl 处理)
+ * - 分割线渲染 (由 GlobalLayoutControl 处理)
+ */
+import { computed, onMounted, watch } from 'vue'
 import { useData } from 'vitepress'
 import DefaultTheme from 'vitepress/theme'
+import { useLayoutStore } from '../stores/layout'
+
+// 功能组件
 import ScrollProgress from './features/ScrollProgress.vue'
 import ModeSwitcher from './features/ModeSwitcher.vue'
 import SemanticHeatmap from './features/SemanticHeatmap.vue'
 import RelatedReferences from './features/RelatedReferences.vue'
-// ============ Types ============
-interface LayoutState {
-  leftWidth: number
-  rightWidth: number
-  leftVisible: boolean
-  rightVisible: boolean
-  contentWidth: 'narrow' | 'half' | 'full'
-}
+import GlobalLayoutControl from './features/GlobalLayoutControl.vue'
 
-// ============ State ============
-const STORAGE_KEY = 'mu-layout-state'
-const DEFAULT_LEFT_WIDTH = 280
-const DEFAULT_RIGHT_WIDTH = 240
-const MIN_WIDTH = 180
-const MAX_LEFT_WIDTH = 400
-const MAX_RIGHT_WIDTH = 320
-
-const layoutState = ref<LayoutState>({
-  leftWidth: DEFAULT_LEFT_WIDTH,
-  rightWidth: DEFAULT_RIGHT_WIDTH,
-  leftVisible: true,
-  rightVisible: true,
-  contentWidth: 'half'
-})
-
-// Provide layout state to child components
-provide('layoutState', layoutState)
-
+const layoutStore = useLayoutStore()
 const { frontmatter, page } = useData()
-
-// ============ Drag State ============
-const isDraggingLeft = ref(false)
-const isDraggingRight = ref(false)
-const startX = ref(0)
-const startWidth = ref(0)
 
 // ============ Computed ============
 const isDocPage = computed(() => {
@@ -52,83 +37,9 @@ const isDocPage = computed(() => {
 
 const showToolbar = computed(() => isDocPage.value)
 
-// ============ Persistence ============
-const loadState = () => {
-  if (typeof window === 'undefined') return
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY)
-    if (saved) {
-      const parsed = JSON.parse(saved)
-      Object.assign(layoutState.value, parsed)
-    }
-  } catch (e) {
-    console.warn('Failed to load layout state:', e)
-  }
-}
-
-const saveState = () => {
-  if (typeof window === 'undefined') return
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(layoutState.value))
-  } catch (e) {
-    console.warn('Failed to save layout state:', e)
-  }
-}
-
-watch(layoutState, saveState, { deep: true })
-
-// ============ Drag Handlers ============
-const startDragLeft = (e: MouseEvent) => {
-  isDraggingLeft.value = true
-  startX.value = e.clientX
-  startWidth.value = layoutState.value.leftWidth
-  document.body.style.cursor = 'col-resize'
-  document.body.style.userSelect = 'none'
-}
-
-const startDragRight = (e: MouseEvent) => {
-  isDraggingRight.value = true
-  startX.value = e.clientX
-  startWidth.value = layoutState.value.rightWidth
-  document.body.style.cursor = 'col-resize'
-  document.body.style.userSelect = 'none'
-}
-
-const onMouseMove = (e: MouseEvent) => {
-  if (isDraggingLeft.value) {
-    const delta = e.clientX - startX.value
-    const newWidth = Math.min(MAX_LEFT_WIDTH, Math.max(MIN_WIDTH, startWidth.value + delta))
-    layoutState.value.leftWidth = newWidth
-  } else if (isDraggingRight.value) {
-    const delta = startX.value - e.clientX
-    const newWidth = Math.min(MAX_RIGHT_WIDTH, Math.max(MIN_WIDTH, startWidth.value + delta))
-    layoutState.value.rightWidth = newWidth
-  }
-}
-
-const onMouseUp = () => {
-  isDraggingLeft.value = false
-  isDraggingRight.value = false
-  document.body.style.cursor = ''
-  document.body.style.userSelect = ''
-}
-
-// ============ Toggle Functions ============
-const toggleLeft = () => {
-  layoutState.value.leftVisible = !layoutState.value.leftVisible
-}
-
-const toggleRight = () => {
-  layoutState.value.rightVisible = !layoutState.value.rightVisible
-}
-
-const setContentWidth = (width: 'narrow' | 'half' | 'full') => {
-  layoutState.value.contentWidth = width
-}
-
-// ============ Computed Styles ============
+// 内容最大宽度
 const contentMaxWidth = computed(() => {
-  switch (layoutState.value.contentWidth) {
+  switch (layoutStore.contentWidth) {
     case 'narrow': return '680px'
     case 'half': return '900px'
     case 'full': return '100%'
@@ -136,16 +47,16 @@ const contentMaxWidth = computed(() => {
   }
 })
 
+// ============ 响应式 CSS 变量绑定 ============
+const leftWidthPx = computed(() => `${layoutStore.leftWidth}px`)
+const rightWidthPx = computed(() => `${layoutStore.rightWidth}px`)
+const leftPadding = computed(() => layoutStore.leftVisible ? `calc(${layoutStore.leftWidth}px + 32px)` : '32px')
+const rightPadding = computed(() => layoutStore.rightVisible ? `calc(${layoutStore.rightWidth}px + 32px)` : '32px')
+
 // ============ Lifecycle ============
 onMounted(() => {
-  loadState()
-  document.addEventListener('mousemove', onMouseMove)
-  document.addEventListener('mouseup', onMouseUp)
-})
-
-onUnmounted(() => {
-  document.removeEventListener('mousemove', onMouseMove)
-  document.removeEventListener('mouseup', onMouseUp)
+  // 确保初始布局正确应用
+  layoutStore.applyLayout()
 })
 </script>
 
@@ -153,20 +64,20 @@ onUnmounted(() => {
   <div 
     class="mu-layout-wrapper" 
     :class="{ 
-      'dragging': isDraggingLeft || isDraggingRight,
+      'dragging': layoutStore.isResizing,
       'has-toolbar': showToolbar,
-      'left-hidden': !layoutState.leftVisible,
-      'right-hidden': !layoutState.rightVisible
+      'left-hidden': !layoutStore.leftVisible,
+      'right-hidden': !layoutStore.rightVisible
     }"
   >
-    <!-- Layout Toolbar -->
+    <!-- Layout Toolbar (顶部居中的布局控制) -->
     <Transition name="toolbar-fade">
       <div v-if="showToolbar" class="mu-layout-toolbar">
         <!-- Left toggle -->
         <button 
           class="mu-toolbar-btn" 
-          @click="toggleLeft" 
-          :class="{ active: layoutState.leftVisible }"
+          @click="layoutStore.toggleLeft()" 
+          :class="{ active: layoutStore.leftVisible }"
           title="切换侧边栏 (Ctrl+[)"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -179,8 +90,8 @@ onUnmounted(() => {
         <div class="mu-width-selector">
           <button 
             class="mu-width-btn" 
-            :class="{ active: layoutState.contentWidth === 'narrow' }"
-            @click="setContentWidth('narrow')"
+            :class="{ active: layoutStore.contentWidth === 'narrow' }"
+            @click="layoutStore.setContentWidth('narrow')"
             title="窄"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -189,8 +100,8 @@ onUnmounted(() => {
           </button>
           <button 
             class="mu-width-btn" 
-            :class="{ active: layoutState.contentWidth === 'half' }"
-            @click="setContentWidth('half')"
+            :class="{ active: layoutStore.contentWidth === 'half' }"
+            @click="layoutStore.setContentWidth('half')"
             title="半宽"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -199,8 +110,8 @@ onUnmounted(() => {
           </button>
           <button 
             class="mu-width-btn" 
-            :class="{ active: layoutState.contentWidth === 'full' }"
-            @click="setContentWidth('full')"
+            :class="{ active: layoutStore.contentWidth === 'full' }"
+            @click="layoutStore.setContentWidth('full')"
             title="全宽"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -212,8 +123,8 @@ onUnmounted(() => {
         <!-- Right toggle -->
         <button 
           class="mu-toolbar-btn" 
-          @click="toggleRight" 
-          :class="{ active: layoutState.rightVisible }"
+          @click="layoutStore.toggleRight()" 
+          :class="{ active: layoutStore.rightVisible }"
           title="切换大纲 (Ctrl+])"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -224,25 +135,8 @@ onUnmounted(() => {
       </div>
     </Transition>
 
-    <!-- Left Resizer (only when visible) -->
-    <div 
-      v-if="showToolbar && layoutState.leftVisible"
-      class="mu-resizer mu-resizer-left" 
-      @mousedown="startDragLeft"
-      :style="{ left: `${layoutState.leftWidth}px` }"
-    >
-      <div class="mu-resizer-handle"></div>
-    </div>
-    
-    <!-- Right Resizer (only when visible) -->
-    <div 
-      v-if="showToolbar && layoutState.rightVisible"
-      class="mu-resizer mu-resizer-right" 
-      @mousedown="startDragRight"
-      :style="{ right: `${layoutState.rightWidth}px` }"
-    >
-      <div class="mu-resizer-handle"></div>
-    </div>
+    <!-- Global Layout Control (处理分割线 + 拖拽) -->
+    <GlobalLayoutControl />
 
     <!-- Scroll Progress -->
     <ScrollProgress />
@@ -293,7 +187,7 @@ onUnmounted(() => {
   border: 1px solid var(--vp-c-divider);
   border-radius: 12px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  z-index: 100;
+  z-index: 99; /* 低于 Navbar (100)，但高于内容 */
   backdrop-filter: blur(8px);
 }
 
@@ -363,43 +257,9 @@ onUnmounted(() => {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-/* ============ Resizers ============ */
-.mu-resizer {
-  position: fixed;
-  top: calc(var(--vp-nav-height, 64px) + 20px);
-  bottom: 0;
-  width: 8px;
-  cursor: col-resize;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 50;
-  background: transparent;
-  transition: background 0.15s;
-}
-
-.mu-resizer:hover,
-.mu-resizer:active {
-  background: var(--vp-c-brand-soft);
-}
-
-.mu-resizer-handle {
-  width: 3px;
-  height: 40px;
-  background: var(--vp-c-divider);
-  border-radius: 2px;
-  transition: all 0.15s;
-}
-
-.mu-resizer:hover .mu-resizer-handle,
-.mu-resizer:active .mu-resizer-handle {
-  background: var(--vp-c-brand-1);
-  height: 60px;
-}
-
-/* ============ Dynamic Sidebar Widths ============ */
+/* ============ Dynamic Sidebar Widths (使用 Pinia Store 的值) ============ */
 .mu-layout-wrapper.has-toolbar .VPSidebar {
-  width: v-bind('`${layoutState.leftWidth}px`') !important;
+  width: v-bind('leftWidthPx') !important;
   transition: width 0.2s ease, opacity 0.2s ease;
 }
 
@@ -412,7 +272,7 @@ onUnmounted(() => {
 /* Right sidebar (outline) */
 .mu-layout-wrapper.has-toolbar .VPDocAsideOutline,
 .mu-layout-wrapper.has-toolbar .VPDoc .aside {
-  width: v-bind('`${layoutState.rightWidth}px`') !important;
+  width: v-bind('rightWidthPx') !important;
   transition: width 0.2s ease, opacity 0.2s ease;
 }
 
@@ -431,22 +291,18 @@ onUnmounted(() => {
 
 /* Adjust main content margin when sidebars change */
 .mu-layout-wrapper.has-toolbar .VPDoc.has-aside .content {
-  padding-right: v-bind('layoutState.rightVisible ? `calc(${layoutState.rightWidth}px + 32px)` : "32px"') !important;
+  padding-right: v-bind('rightPadding') !important;
   transition: padding-right 0.2s ease;
 }
 
 .mu-layout-wrapper.has-toolbar .VPDoc .content {
-  padding-left: v-bind('layoutState.leftVisible ? `calc(${layoutState.leftWidth}px + 32px)` : "32px"') !important;
+  padding-left: v-bind('leftPadding') !important;
   transition: padding-left 0.2s ease;
 }
 
 /* ============ Responsive ============ */
 @media (max-width: 960px) {
   .mu-layout-toolbar {
-    display: none;
-  }
-  
-  .mu-resizer {
     display: none;
   }
 }
