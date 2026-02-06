@@ -14,34 +14,54 @@ const route = useRoute()
 
 /**
  * 展开所有折叠的侧边栏分组
+ * 优化：点击 caret 而不是 item，防止触发链接跳转
  */
-const expandAll = (): void => {
-  const groups = document.querySelectorAll('.VPSidebarItem.collapsible')
-  groups.forEach(group => {
-    // VitePress 使用 'collapsed' 类来标记折叠状态
-    if (group.classList.contains('collapsed')) {
-      const button = group.querySelector('.item') as HTMLElement
-      if (button) {
-        button.click()
+const expandAll = async (): Promise<void> => {
+  const groups = Array.from(document.querySelectorAll('.VPSidebarItem.collapsible'))
+  const toExpand = groups.filter(group => group.classList.contains('collapsed'))
+  
+  // 分批处理，避免卡顿
+  for (let i = 0; i < toExpand.length; i += 20) {
+    const chunk = toExpand.slice(i, i + 20)
+    chunk.forEach(group => {
+      // 必须点击 caret，因为 .item 可能包含链接
+      const caret = group.querySelector('.item .caret') as HTMLElement
+      if (caret) {
+        caret.click()
+      } else {
+        // 兜底：如果没有 caret，尝试点击 item (虽然不应该发生)
+        const button = group.querySelector('.item') as HTMLElement
+        if (button) button.click()
       }
-    }
-  })
+    })
+    // 给一点时间让浏览器渲染每一批
+    await new Promise(resolve => setTimeout(resolve, 10))
+  }
 }
 
 /**
  * 折叠所有展开的侧边栏分组
  */
-const collapseAll = (): void => {
-  const groups = document.querySelectorAll('.VPSidebarItem.collapsible')
-  groups.forEach(group => {
-    // 没有 'collapsed' 类表示当前是展开状态
-    if (!group.classList.contains('collapsed')) {
-      const button = group.querySelector('.item') as HTMLElement
-      if (button) {
-        button.click()
+const collapseAll = async (): Promise<void> => {
+  const groups = Array.from(document.querySelectorAll('.VPSidebarItem.collapsible'))
+  // 反向处理：先折叠子级，再折叠父级（虽然 CSS 显示上没区别，但逻辑更顺）
+  const toCollapse = groups
+    .filter(group => !group.classList.contains('collapsed'))
+    .reverse()
+  
+  for (let i = 0; i < toCollapse.length; i += 20) {
+    const chunk = toCollapse.slice(i, i + 20)
+    chunk.forEach(group => {
+      const caret = group.querySelector('.item .caret') as HTMLElement
+      if (caret) {
+        caret.click()
+      } else {
+        const button = group.querySelector('.item') as HTMLElement
+        if (button) button.click()
       }
-    }
-  })
+    })
+    await new Promise(resolve => setTimeout(resolve, 10))
+  }
 }
 
 /**
@@ -77,16 +97,21 @@ const locateCurrent = async (): Promise<void> => {
     const expandWithDelay = (index: number) => {
       if (index >= parentsToExpand.length) {
         // 所有父级展开完成后，滚动到激活项
+        // 稍微延时以确保动画完全结束
         setTimeout(() => {
           activeItem.scrollIntoView({ behavior: 'smooth', block: 'center' })
-        }, 100)
+        }, 150)
         return
       }
       
       const group = parentsToExpand[index]
-      const button = group.querySelector(':scope > .item') as HTMLElement
-      if (button) {
-        button.click()
+      // 同样改为点击 caret
+      const caret = group.querySelector('.item .caret') as HTMLElement
+      if (caret) {
+        caret.click()
+      } else {
+        const button = group.querySelector('.item') as HTMLElement
+        if (button) button.click()
       }
       
       // 等待动画完成后展开下一个

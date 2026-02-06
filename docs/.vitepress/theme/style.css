@@ -175,46 +175,162 @@
 .sidebar-toolbar {
   position: sticky;
   top: 0;
-  z-index: 60; /* 高于侧边栏内容 */
-  background-color: var(--vp-c-bg);
+  z-index: 60;
+  background: linear-gradient(to bottom, var(--vp-c-bg), var(--vp-c-bg-soft));
   border-bottom: 1px solid var(--vp-c-divider);
+  backdrop-filter: blur(8px);
 }
 
-/* === 视觉细节 === */
-/* 确保所有可折叠项的箭头可见 */
+/* ============================================
+   侧边栏美化 - 简洁大气风格
+   ============================================ */
+
+/* === 侧边栏整体 === */
+@media (min-width: 960px) {
+  .VPSidebar {
+    margin-left: 8px !important;
+    padding: 16px 8px 24px 8px !important;
+    background: var(--vp-c-bg) !important;
+  }
+  
+  /* 自定义滚动条 */
+  .VPSidebar::-webkit-scrollbar {
+    width: 4px;
+  }
+  
+  .VPSidebar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .VPSidebar::-webkit-scrollbar-thumb {
+    background-color: var(--vp-c-divider);
+    border-radius: 4px;
+  }
+  
+  .VPSidebar::-webkit-scrollbar-thumb:hover {
+    background-color: var(--vp-c-text-3);
+  }
+}
+
+/* === 导航分组标题 === */
+.VPSidebarItem.level-0 > .item {
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  color: var(--vp-c-text-1) !important;
+  letter-spacing: 0.02em;
+  padding: 10px 12px !important;
+  margin-bottom: 4px;
+}
+
+/* === 导航项基础样式 === */
+.VPSidebarItem .item {
+  padding: 8px 12px !important;
+  margin: 2px 4px !important;
+  border-radius: 8px !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  border-left: none !important;
+  font-size: 13px !important;
+  color: var(--vp-c-text-2) !important;
+}
+
+/* === 悬停效果 === */
+.VPSidebarItem .item:hover {
+  background-color: var(--vp-c-bg-soft) !important;
+  color: var(--vp-c-text-1) !important;
+  transform: translateX(2px);
+}
+
+/* === 激活状态 - 优雅的高亮 === */
+.VPSidebarItem.is-active > .item {
+  background: linear-gradient(135deg, 
+    color-mix(in srgb, var(--vp-c-brand-1) 15%, transparent),
+    color-mix(in srgb, var(--vp-c-brand-2) 10%, transparent)
+  ) !important;
+  color: var(--vp-c-brand-1) !important;
+  font-weight: 500 !important;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--vp-c-brand-1) 20%, transparent);
+  border-left: none !important;
+}
+
+/* 激活项的小圆点指示器 */
+.VPSidebarItem.is-active > .item::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--vp-c-brand-1);
+  box-shadow: 0 0 8px var(--vp-c-brand-1);
+}
+
+/* === 可折叠项箭头 === */
 .VPSidebarItem.collapsible > .item .caret {
   display: flex !important;
-  opacity: 0.6 !important;
-  transition: transform 0.15s ease, opacity 0.15s ease;
+  opacity: 0.5 !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  margin-left: auto;
 }
 
 .VPSidebarItem.collapsible > .item:hover .caret {
   opacity: 1 !important;
 }
 
-/* 折叠状态的箭头旋转 */
 .VPSidebarItem.collapsible.collapsed > .item .caret {
   transform: rotate(-90deg);
 }
 
-/* 激活状态 */
-.VPSidebarItem.is-active > .item {
-  background-color: var(--vp-c-bg-soft);
-  color: var(--vp-c-brand-1) !important;
-  border-left: 3px solid var(--vp-c-brand-1);
-}
-
-/* === 确保布局舒适 === */
-/* 左侧边栏留一点呼吸空间 */
-.VPSidebar {
+/* === 子项目缩进与层级 === */
+.VPSidebarItem .items {
+  padding-left: 8px !important;
   margin-left: 8px !important;
-  padding-left: 0 !important;
+  border-left: 1px solid var(--vp-c-divider) !important;
 }
 
-/* 右侧边栏紧贴右边 */
+/* 子项目更小的字体和间距 */
+.VPSidebarItem.level-1 .item,
+.VPSidebarItem.level-2 .item,
+.VPSidebarItem.level-3 .item {
+  font-size: 12.5px !important;
+  padding: 6px 10px !important;
+}
+
+/* === 链接样式 === */
+.VPSidebarItem .item .link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* === 动画优化 === */
+.VPSidebarItem .items {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* === 右侧大纲 === */
 .VPDocAside {
   margin-right: 0 !important;
-  padding-right: 0 !important;
+  padding: 24px 16px !important;
+}
+
+/* 大纲链接样式 */
+.VPDocAsideOutline .outline-link {
+  font-size: 12px !important;
+  color: var(--vp-c-text-2) !important;
+  padding: 4px 0 !important;
+  transition: color 0.2s ease, transform 0.2s ease !important;
+}
+
+.VPDocAsideOutline .outline-link:hover {
+  color: var(--vp-c-brand-1) !important;
+  transform: translateX(2px);
+}
+
+.VPDocAsideOutline .outline-link.active {
+  color: var(--vp-c-brand-1) !important;
+  font-weight: 500 !important;
 }
 
 /* 内容区无多余间距 */

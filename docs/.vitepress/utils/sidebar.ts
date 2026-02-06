@@ -63,6 +63,13 @@ export function generateSidebar(
           const content = fs.readFileSync(indexPath, 'utf-8')
           const { data: frontmatter } = matter(content)
           title = frontmatter.title || title
+          
+          // 如果文件名有序号 (如 "1. 导论"), 但 frontmatter 标题没有 (如 "导论")
+          // 则自动补全序号
+          const match = nodeName.match(/^(\d+(\.\d+)*\.?\s+)/)
+          if (match && !title.startsWith(match[1].trim()) && !title.startsWith(match[1])) {
+             title = `${match[1]}${title}`
+          }
           link = linkPath
         } catch (e) {
           // ignore error
@@ -95,7 +102,13 @@ export function generateSidebar(
       
       const content = fs.readFileSync(filePath, 'utf-8')
       const { data: frontmatter } = matter(content)
-      const title = frontmatter.title || formatDirName(nodeName.replace(/\.md$/, ''))
+      let title = frontmatter.title || formatDirName(nodeName.replace(/\.md$/, ''))
+
+      // 同样补全普通文件的序号
+      const match = nodeName.match(/^(\d+(\.\d+)*\.?\s+)/)
+      if (match && !title.startsWith(match[1].trim()) && !title.startsWith(match[1])) {
+         title = `${match[1]}${title}`
+      }
       
       items.push({
         text: title,
@@ -113,7 +126,6 @@ export function generateSidebar(
  */
 function formatDirName(name: string): string {
   return name
-    .replace(/^\d+-/, '')  // 移除数字前缀
     .replace(/-/g, ' ')    // 横线转空格
     .replace(/\b\w/g, c => c.toUpperCase())  // 首字母大写
 }
