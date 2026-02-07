@@ -155,23 +155,58 @@ const categories = computed(() => {
     // Flatten logic: Look for the first group that isn't empty
     for (const group of knowledgeItems) {
       if (group.items && group.items.length > 0) {
-        // Assume this group contains the series
-        // Filter out "栏目首页"
-        targetItems = group.items.filter((i: any) => i.text !== '栏目首页' && i.text !== '知识库所首页')
+        // Filter out navigation items that aren't actual knowledge bases
+        targetItems = group.items.filter((i: any) => 
+          i.text !== '栏目首页' && 
+          i.text !== '知识库首页' &&
+          i.text !== '知识库所首页' &&
+          i.link !== '/knowledge/' // Also filter by link to be safe
+        )
         break;
       }
     }
   }
   
-  return targetItems.map((item: any) => ({
-    title: item.text,
-    icon: getIcon(item.text),
-    description: `包含 ${countArticles(item.items || [])} 篇文章`,
-    link: item.link || getFirstLink(item.items || []),
-    count: countArticles(item.items || []),
-    color: getColor(item.text),
-    tags: item.items ? item.items.slice(0, 3).map((sub: any) => sub.text.replace(/^\d+(\.\d+)?\s*/, '')) : []
-  }))
+  return targetItems.map((item: any) => {
+    // For each KB, lookup its own sidebar to count articles
+    // E.g., for link="/knowledge/llm-mastery/", look for sidebar["/knowledge/llm-mastery/"]
+    const kbPath = item.link?.endsWith('/') ? item.link : `${item.link}/`
+    const kbSidebar = sidebar[kbPath]
+    
+    let articleCount = 0
+    if (kbSidebar && Array.isArray(kbSidebar)) {
+      // Count articles recursively from the KB's own sidebar
+      for (const group of kbSidebar) {
+        if (group.items) {
+          articleCount += countArticles(group.items)
+        }
+      }
+    }
+    
+    // Get tags from KB sidebar (first few sub-items)
+    let tags: string[] = []
+    if (kbSidebar && kbSidebar[0]?.items) {
+      // Skip meta links like '返回知识库首页', '本库概览' 
+      const contentItems = kbSidebar[0].items.filter((sub: any) => 
+        !sub.text?.includes('返回') && 
+        !sub.text?.includes('概览') &&
+        !sub.text?.includes('首页')
+      )
+      tags = contentItems.slice(0, 3).map((sub: any) => 
+        sub.text?.replace(/^[\d.]+\s*/, '').replace(/^📚\s*/, '') || ''
+      ).filter(Boolean)
+    }
+    
+    return {
+      title: item.text,
+      icon: getIcon(item.text),
+      description: `包含 ${articleCount} 篇文章`,
+      link: item.link || getFirstLink(item.items || []),
+      count: articleCount,
+      color: getColor(item.text),
+      tags
+    }
+  })
 })
 
 // Use build-time stats for global metrics

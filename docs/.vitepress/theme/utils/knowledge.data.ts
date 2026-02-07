@@ -30,52 +30,57 @@ export default createContentLoader('**/*.md', {
   transform(rawData) {
     const nodes: HelperNode[] = []
     const links: HelperLink[] = []
-    const idMap = new Map<string, boolean>()
+    // Optimize: Use Map for O(1) lookup instead of array.find O(N)
+    const nodeMap = new Map<string, HelperNode>()
+    const titleMap = new Map<string, HelperNode>()
 
     // 1. First pass: Create Nodes
     rawData.forEach(page => {
-      // 忽略 index.md (通常是目录页，或者只作为入口) - 视情况而定
-      const isIndex = page.url.endsWith('/')
-      
+      // Safety check
+      if (!page.url) return
+
       const title = page.frontmatter.title || 
                     page.url.split('/').filter(Boolean).pop() || 
                     'Home'
       
       const id = page.url
       
-      nodes.push({
+      const node: HelperNode = {
         id,
         name: title,
         val: 1,
         link: page.url
-      })
-      
-      idMap.set(id, true)
+      }
+
+      nodes.push(node)
+      nodeMap.set(id, node)
+      titleMap.set(title, node)
     })
 
     // 2. Second pass: Create Links
+    // Optimize: simpler regex
     const linkRegex = /\[\[([^\]|]+)(?:\|[^\]]+)?\]\]/g
 
     rawData.forEach(page => {
       const srcContent = page.src || ''
+      if (!srcContent) return
+
       let match
-      
-      // Reset regex state
-      linkRegex.lastIndex = 0
       
       while ((match = linkRegex.exec(srcContent)) !== null) {
         const rawTarget = match[1].trim()
-        // 尝试匹配目标 URL
-        // 这里只是简单的匹配文件名或路径，实际逻辑可能更复杂
-        // 假设 wiki link 只是文件名
         
         // 寻找匹配的节点
-        // 1. 尝试完全匹配
-        let targetNode = nodes.find(n => n.name === rawTarget)
+        // 1. 尝试完全匹配标题
+        let targetNode = titleMap.get(rawTarget)
         
-        // 2. 尝试部分匹配 (如 "2.1 深度学习" 匹配 "深度学习")
+        // 2. 尝试部分匹配 (Fallback, slower but acceptable)
         if (!targetNode) {
-          targetNode = nodes.find(n => n.name.includes(rawTarget))
+           // Limit partial search to avoid O(N^2) on huge datasets if possible, 
+           // but for now we keep it simple but maybe add a length check
+           if (rawTarget.length > 1) {
+             targetNode = nodes.find(n => n.name.includes(rawTarget))
+           }
         }
 
         if (targetNode && targetNode.id !== page.url) {
@@ -86,7 +91,7 @@ export default createContentLoader('**/*.md', {
           
           // 增加节点权重
           targetNode.val += 0.5
-          const sourceNode = nodes.find(n => n.id === page.url)
+          const sourceNode = nodeMap.get(page.url)
           if (sourceNode) sourceNode.val += 0.5
         }
       }

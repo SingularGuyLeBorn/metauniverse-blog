@@ -41,6 +41,7 @@ import GlobalLayoutControl from "./components/features/GlobalLayoutControl.vue";
 import ArticleMetadata from "./components/features/ArticleMetadata.vue";
 import Breadcrumbs from "./components/features/Breadcrumbs.vue";
 import ImageLightbox from "./components/features/ImageLightbox.vue";
+import ImageCaptions from "./components/features/ImageCaptions.vue";
 
 
 export default {
@@ -77,7 +78,8 @@ export default {
           h(ModeSwitcher),
           h(SemanticHeatmap),
           h(GlobalLayoutControl), // 全局布局控制器
-          h(ImageLightbox) // 图片灯箱
+          h(ImageLightbox), // 图片灯箱
+          h(ImageCaptions) // 图片标题自动生成
         ]),
 
       // 文档内容后 - 关联笔记引用
@@ -116,6 +118,7 @@ export default {
     app.component("ArticleMetadata", ArticleMetadata);
     app.component("Breadcrumbs", Breadcrumbs);
     app.component("ImageLightbox", ImageLightbox);
+    app.component("ImageCaptions", ImageCaptions);
     
     // 客户端初始化
     if (typeof window !== "undefined") {
