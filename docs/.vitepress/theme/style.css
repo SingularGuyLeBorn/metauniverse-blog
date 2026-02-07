@@ -182,159 +182,138 @@
 }
 
 /* ============================================
-   侧边栏美化 - 飞书/语雀风格
+   侧边栏美化 (Notion / Feishu Premium Style)
    ============================================ */
 
-/* === 侧边栏容器 === */
+/* === 1. Sidebar Container === */
 @media (min-width: 960px) {
   .VPSidebar {
     margin-left: 0 !important;
-    padding: 12px 8px !important;
-    background: var(--vp-c-bg) !important;
-    border-right: none !important;
-    box-shadow: inset -1px 0 0 var(--vp-c-divider);
+    padding: 12px 12px !important;
+    background-color: var(--vp-c-bg-alt) !important; /* Subtle contrast background */
+    border-right: 1px solid var(--vp-c-divider) !important;
+    box-shadow: none !important;
+    transition: width 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.3s ease !important;
   }
-  
-  /* 滚动条 - 悬停显示 */
-  .VPSidebar::-webkit-scrollbar { width: 6px; }
+
+  /* Custom Scrollbar - Slim & Hover-visible */
+  .VPSidebar::-webkit-scrollbar { width: 5px; }
   .VPSidebar::-webkit-scrollbar-track { background: transparent; }
   .VPSidebar::-webkit-scrollbar-thumb { 
     background: transparent; 
-    border-radius: 3px;
+    border-radius: 4px;
   }
   .VPSidebar:hover::-webkit-scrollbar-thumb { 
-    background: rgba(0,0,0,0.15); 
+    background: var(--vp-c-divider); 
   }
-  .dark .VPSidebar:hover::-webkit-scrollbar-thumb { 
-    background: rgba(255,255,255,0.15); 
+  .VPSidebar:hover::-webkit-scrollbar-thumb:hover { 
+    background: var(--vp-c-text-3); 
   }
 }
 
-/* === 分组标题 === */
+/* === 2. Group Sections (Level 0) === */
+.VPSidebarItem.level-0 {
+  padding-bottom: 16px !important;
+}
+
 .VPSidebarItem.level-0 > .item {
-  font-weight: 500 !important;
-  font-size: 12px !important;
-  color: var(--vp-c-text-3) !important;
-  padding: 16px 12px 8px !important;
-  margin: 0 !important;
-  background: none !important;
-  border: none !important;
-  letter-spacing: 0.02em;
+  padding: 8px 8px 8px 4px !important;
+  margin-bottom: 4px !important;
+  transition: color 0.2s ease;
 }
 
-.VPSidebarItem.level-0:first-child > .item {
-  padding-top: 4px !important;
+.VPSidebarItem.level-0 > .item > .text {
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: var(--vp-c-text-2) !important;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
-/* 分组标题不可点击时隐藏箭头 */
-.VPSidebarItem.level-0 > .item .caret {
-  display: none !important;
+.VPSidebarItem.level-0 > .item:hover > .text {
+  color: var(--vp-c-text-1) !important;
 }
 
-/* === 所有导航项 === */
+/* === 3. Navigation Links (Items) === */
 .VPSidebarItem .item {
   position: relative;
   display: flex;
   align-items: center;
-  padding: 7px 12px !important;
-  margin: 2px 4px !important;
-  border-radius: 8px !important;
+  padding: 6px 10px !important;
+  margin: 2px 0 !important;
+  border-radius: 6px !important;
   font-size: 14px !important;
-  font-weight: 400 !important;
-  color: var(--vp-c-text-1) !important;
-  line-height: 1.4 !important;
-  transition: background-color 0.1s ease !important;
-  border: none !important;
+  line-height: 1.5 !important;
+  color: var(--vp-c-text-2) !important;
+  transition: all 0.15s ease-out !important;
+  border: 1px solid transparent !important;
   background: transparent !important;
 }
 
-/* === 悬停 - 飞书风格浅灰 === */
+/* Hover State - Soft Gray */
 .VPSidebarItem .item:hover {
-  background: rgba(31, 35, 41, 0.06) !important;
-}
-.dark .VPSidebarItem .item:hover {
-  background: rgba(255, 255, 255, 0.06) !important;
+  background-color: var(--vp-c-bg-mute) !important;
+  color: var(--vp-c-text-1) !important;
 }
 
-/* === 激活状态 - 浅蓝背景 + 品牌色文字 === */
+/* Active State - Soft Blue/Brand Background */
 .VPSidebarItem.is-active > .item {
-  background: var(--vp-c-brand-soft) !important;
+  background-color: var(--vp-c-brand-soft) !important;
   color: var(--vp-c-brand-1) !important;
   font-weight: 500 !important;
 }
 
-/* 激活状态只用背景色，不加左侧线条 */
-
-/* === 可折叠箭头 === */
-.VPSidebarItem.collapsible > .item .caret {
-  flex-shrink: 0;
-  width: 16px;
-  height: 16px;
-  color: var(--vp-c-text-3);
-  opacity: 0.6;
-  transition: transform 0.15s ease, opacity 0.15s ease !important;
-}
-
-.VPSidebarItem.collapsible > .item:hover .caret {
-  opacity: 1;
-}
-
-/* === 子项缩进 - 无连接线 === */
-.VPSidebarItem .items {
-  padding-left: 16px !important;
-  margin-left: 0 !important;
-  border-left: none !important;
-}
-
-/* === 子层级样式 === */
+/* Nested Levels - Visual Hierarchy */
 .VPSidebarItem.level-1 > .item,
 .VPSidebarItem.level-2 > .item,
 .VPSidebarItem.level-3 > .item {
-  font-size: 13px !important;
-  padding: 6px 10px !important;
-  color: var(--vp-c-text-2) !important;
+  margin-left: 0px !important; /* Managed by .items padding */
 }
 
-.VPSidebarItem.level-1 > .item:hover,
-.VPSidebarItem.level-2 > .item:hover,
-.VPSidebarItem.level-3 > .item:hover {
-  color: var(--vp-c-text-1) !important;
-}
-
-/* 子项激活 */
-.VPSidebarItem.level-1.is-active > .item,
-.VPSidebarItem.level-2.is-active > .item,
-.VPSidebarItem.level-3.is-active > .item {
-  color: var(--vp-c-brand-1) !important;
-  background: var(--vp-c-brand-soft) !important;
-}
-
-/* 移除之前所有 ::before 伪元素 */
-.VPSidebarItem .item::before {
-  display: none !important;
-}
-
-/* === 文本溢出省略 === */
-.VPSidebarItem .item .text {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  flex: 1;
-}
-
-/* === 链接容器 === */
-.VPSidebarItem .item .link {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  gap: 6px;
-}
-
-/* === 动画 === */
+/* Indentation for nested items (No vertical lines/borders for cleaner look) */
 .VPSidebarItem .items {
-  transition: height 0.2s ease-out;
+  padding-left: 14px !important;
+  border-left: 1px solid var(--vp-c-divider-light); /* Subtle guide line */
+  margin-left: 10px !important;
 }
 
+.VPSidebarItem.level-0 > .items {
+  border-left: none !important; /* Top level doesn't need border */
+  padding-left: 0 !important;
+  margin-left: 0 !important;
+}
+
+/* Icons & text alignment */
+.VPSidebarItem .text {
+    flex-grow: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* === 4. Collapse Caret === */
+.VPSidebarItem.collapsible > .item .caret {
+  margin-right: 4px;
+  width: 18px;
+  height: 18px;
+  color: var(--vp-c-text-3);
+  opacity: 0.7;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.VPSidebarItem.collapsible > .item .caret:hover {
+  background-color: rgba(0,0,0,0.05);
+  color: var(--vp-c-text-1);
+  opacity: 1;
+}
+
+.dark .VPSidebarItem.collapsible > .item .caret:hover {
+  background-color: rgba(255,255,255,0.1);
+}
+
+/* Remove default before pseudo elements */
+.VPSidebarItem .item::before { display: none !important; }
 
 /* === 右侧大纲 - 飞书风格 === */
 .VPDocAside {
@@ -406,87 +385,6 @@
   .VPDoc .content {
     margin: 0 !important;
   }
-}
-
-/* ============================================
-   Visual Polish (Premium Navigation)
-   ============================================ */
-
-/* 1. Left Sidebar (VPSidebar) */
-.VPSidebar {
-  background-color: var(--vp-c-bg) !important;
-  border-right: 1px solid var(--vp-c-divider) !important;
-  transition: all 0.3s ease;
-}
-
-.VPSidebarItem.level-0 {
-  padding-bottom: 24px;
-}
-
-.VPSidebarItem.level-0 > .item > .text {
-  font-weight: 700 !important;
-  color: var(--vp-c-text-1) !important;
-  font-size: 1.1em;
-}
-
-/* Sidebar Links */
-.VPSidebarItem .link {
-  border-left: 2px solid transparent;
-  padding-left: 16px;
-  transition: all 0.2s ease;
-  border-radius: 0 4px 4px 0;
-  opacity: 0.8;
-}
-
-.VPSidebarItem .link:hover {
-  background-color: var(--vp-c-bg-soft);
-  color: var(--vp-c-brand);
-  opacity: 1;
-  padding-left: 20px; /* Micro-interaction: slide on hover */
-}
-
-.VPSidebarItem .link.active {
-  border-left-color: var(--vp-c-brand);
-  background: linear-gradient(90deg, var(--vp-c-brand-soft) 0%, transparent 100%);
-  color: var(--vp-c-brand);
-  font-weight: 600;
-  opacity: 1;
-}
-
-/* Icons in sidebar */
-.VPSidebarItem .text {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* 2. Right Sidebar (Outline) */
-.VPDocAsideOutline .outline-link {
-  transition: transform 0.2s ease, color 0.2s ease;
-  font-size: 13px !important;
-}
-
-.VPDocAsideOutline .outline-link:hover {
-  color: var(--vp-c-brand) !important;
-  transform: translateX(4px);
-}
-
-.VPDocAsideOutline .outline-link.active {
-  color: var(--vp-c-brand) !important;
-  font-weight: 600;
-  border-left: 2px solid var(--vp-c-brand);
-  padding-left: 10px;
-}
-
-.VPDocAsideOutline {
-  border-left: 1px solid var(--vp-c-divider-light);
-  padding-left: 16px;
-}
-
-/* 3. Breadcrumbs Polish */
-.VPDoc .container > .content {
-    /* Ensure content doesn't overlap fancy breadcrumbs if they were absolute, 
-       but here we just polish the existing component */
 }
 
 /* ============================================

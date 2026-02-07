@@ -191,7 +191,7 @@ watch(
   display: flex;
   justify-content: center; /* 居中显示按钮 */
   padding: 8px 12px;
-  background-color: var(--vp-c-bg);
+  background-color: var(--vp-c-bg-alt);
   border-bottom: 1px solid var(--vp-c-divider);
   position: sticky;
   top: 0;

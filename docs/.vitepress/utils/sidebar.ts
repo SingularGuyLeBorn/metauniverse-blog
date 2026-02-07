@@ -114,7 +114,7 @@ export function generateSidebar(
       const children = generateSidebar(dirPath, linkPath.slice(0, -1), depth + 1)
       
       // 始终添加文件夹到 sidebar (层级保留)
-      const item: SidebarItem = { text: title }
+      const item: SidebarItem = { text: `📁 ${title}` }
       
       // VitePress: 有 items 时会自动显示折叠箭头
       // 对于没有内容文件的文件夹，不设置 link，只允许折叠/展开
