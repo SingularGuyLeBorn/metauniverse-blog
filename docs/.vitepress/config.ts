@@ -121,6 +121,18 @@ export default defineConfig({
       
       pageData.frontmatter.wikiLinks = Array.from(links);
       pageData.frontmatter.graph = true; // 默认开启图谱
+
+      // 计算字数和阅读时间
+      const pureContent = content.replace(/<[^>]*>/g, '').replace(/\[\[.*?\]\]/g, '');
+      const cnMatches = pureContent.match(/[\u4e00-\u9fa5]/g);
+      const enMatches = pureContent.match(/[a-zA-Z0-9]+/g);
+      const cnCount = cnMatches ? cnMatches.length : 0;
+      const enCount = enMatches ? enMatches.length : 0;
+      const wordCount = cnCount + enCount;
+      const readingTime = Math.ceil(wordCount / 400); // 假设阅读速度 400字/分钟
+
+      pageData.frontmatter.wordCount = wordCount;
+      pageData.frontmatter.readingTime = readingTime;
     },
   
   head: [

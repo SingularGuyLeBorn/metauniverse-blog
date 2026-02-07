@@ -38,6 +38,10 @@ import YearlyDashboard from "./components/YearlyDashboard.vue";
 import LayoutToolbar from "./components/features/LayoutToolbar.vue";
 import SidebarToolbar from "./components/features/SidebarToolbar.vue";
 import GlobalLayoutControl from "./components/features/GlobalLayoutControl.vue";
+import ArticleMetadata from "./components/features/ArticleMetadata.vue";
+import Breadcrumbs from "./components/features/Breadcrumbs.vue";
+import ImageLightbox from "./components/features/ImageLightbox.vue";
+
 
 export default {
   extends: DefaultTheme,
@@ -55,13 +59,25 @@ export default {
       
       // 导航栏右侧 - 布局工具栏
       "nav-bar-content-after": () => h(LayoutToolbar),
+
+      // 文档内容前 - 面包屑和元数据
+      "doc-before": () => {
+        const { frontmatter } = useData();
+        if (frontmatter.value.layout !== 'home') {
+          return [
+            h(Breadcrumbs)
+          ];
+        }
+        return null;
+      },
       
-      // 布局底部插槽 - 模式切换器、热力图、全局布局控制器
+      // 布局底部插槽 - 模式切换器、热力图、全局布局控制器、灯箱
       "layout-bottom": () =>
         h("div", { id: "mu-teleport-container" }, [
           h(ModeSwitcher),
           h(SemanticHeatmap),
-          h(GlobalLayoutControl) // 全局布局控制器
+          h(GlobalLayoutControl), // 全局布局控制器
+          h(ImageLightbox) // 图片灯箱
         ]),
 
       // 文档内容后 - 关联笔记引用
@@ -97,6 +113,9 @@ export default {
     app.component("EssaysDashboard", EssaysDashboard);
     app.component("ThoughtsDashboard", ThoughtsDashboard);
     app.component("YearlyDashboard", YearlyDashboard);
+    app.component("ArticleMetadata", ArticleMetadata);
+    app.component("Breadcrumbs", Breadcrumbs);
+    app.component("ImageLightbox", ImageLightbox);
     
     // 客户端初始化
     if (typeof window !== "undefined") {

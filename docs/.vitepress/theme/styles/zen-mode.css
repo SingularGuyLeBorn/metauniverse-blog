@@ -1,0 +1,58 @@
+/* ========================================================================
+   Feature: Zen Mode (深空模式)
+   ======================================================================== */
+
+html.zen-mode {
+  overflow-y: scroll; /* 防止滚动条消失导致页面跳动（可选） */
+}
+
+/* 隐藏所有干扰元素 */
+.zen-mode .VPNavBar,
+.zen-mode .VPSidebar,
+.zen-mode .VPDocAsideOutline,
+.zen-mode .mu-layout-toolbar,
+.zen-mode .VPDocFooter,
+.zen-mode .VPFooter,
+.zen-mode .VPLocalNav {
+  display: none !important;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+/* 内容区居中 & 样式优化 */
+.zen-mode .VPDoc {
+  padding-top: 40px !important; /* 顶部留白 */
+  padding-bottom: 60px !important;
+}
+
+.zen-mode .VPDoc .content-container {
+  max-width: 800px !important;
+  margin: 0 auto !important;
+}
+
+.zen-mode .VPDoc .content {
+  padding: 0 !important; /* 移除左右各种 padding */
+}
+
+/* 字体优化 */
+.zen-mode .vp-doc {
+  /* 更适合阅读的字号与行高 */
+  font-size: 18px;
+  line-height: 1.8;
+  color: var(--vp-c-text-1);
+}
+
+.zen-mode .vp-doc h1 {
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+/* 背景变暗 (Dark Mode 下更深邃) */
+.dark .zen-mode body {
+  background-color: #0d0d0d; /* 接近纯黑 */
+}
+
+.dark .zen-mode .vp-doc {
+  color: #e0e0e0;
+}
