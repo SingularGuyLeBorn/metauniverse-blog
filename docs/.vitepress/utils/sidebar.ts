@@ -229,8 +229,6 @@ function isAttachmentWrapper(filename: string): boolean {
  */
 function formatDirName(name: string): string {
   return name
-    .replace(/-/g, ' ')    // 横线转空格
-    .replace(/\b\w/g, c => c.toUpperCase())  // 首字母大写
 }
 
 /**

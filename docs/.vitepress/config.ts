@@ -27,6 +27,9 @@ export default defineConfig({
         light: 'github-light',
         dark: 'github-dark'
       },
+      languages: [
+        JSON.parse(fs.readFileSync(path.resolve(__dirname, 'ptx.json'), 'utf-8'))
+      ],
       lineNumbers: true, // 显示行号
       math: true, // 启用数学公式支持
       image: {

@@ -91,11 +91,11 @@ manual_scaled_weight = torch.randn(128, input_features) / math.sqrt(input_featur
 
 > 是的,深度学习就是这么不拘小节(sloppy like that)
 
-![](.files/s733wPM0Wf1GUHq.png)
+![](images/l2-float32-format.png)
 
 #### Float16 半精度数据格式
 
-![](.files/NjCDRhKALVWcdMC.png)
+![](images/l2-float16-format.png)
 
 能减少一半的内存用量,知识动态范围不太理想
 
@@ -128,7 +128,7 @@ tensor_bf16_small = torch.tensor(small_number, dtype=torch.bfloat16)
 
 在深度学习中我们实际上更看重动态范围而不是小数部分的精度,因此2018年提出了BF16,给指数部分分配更多的位置,它具有FP16的内存占用量,却有FP32的动态范围. 这也是用的最多的,但是问题在于对于储存优化器状态和参数,仍然需要FP32
 
-![](.files/SOZ8eGIfbHoXgq7.png)
+![](images/l2-bfloat16-format.png)
 
 #### BF8
 
@@ -140,7 +140,7 @@ tensor_bf16_small = torch.tensor(small_number, dtype=torch.bfloat16)
 
 
 
-![](.files/J273WGzkBl8HyDn.png)
+![](images/l2-bf8-format.png)
 
 通常情况下,训练的时候会用FP32,但它需要更多的内存
 
@@ -169,7 +169,7 @@ y_gpu = torch.randn(32, 32, device='cuda')
 
 张量是一个数学对象. 在内存中Tensor实际上看起来像是一个长数组,Tensor本身拥有的是元数据(Meta Data),可以理解为实际数字所在的位置坐标,是两个数字(Stride0,Stride1)
 
-![](.files/1XXHc6gCBDjUcuP.png)
+![](images/l2-tensor-storage-layout.png)
 
 ```python
 x = torch.tensor([
@@ -228,7 +228,7 @@ y = x.T
 
 ```
 
-**关键点**:`y` 和 `x` 共享同一个底层存储空间 `[1, 2, 3, 4, 5, 6]` 4. 
+**关键点**:`y` 和 `x` 共享同一个底层存储空间 `[1, 2, 3, 4, 5, 6]`
 
 `y` 只是改变了元数据(形状和步长)来以不同的方式“看待”这块内存. 
 
@@ -268,7 +268,7 @@ y_contiguous.view(6) # 现在可以正常工作了
 
 而一般来说,计算过程中不会只有一个矩阵,而是会有一个张量. 通常维度是 batch,sequence... 等等想要处理的内容
 
-![](.files/XdOUBkuVSMkVq7r.png)
+![](images/l2-matmul-batch-stride.png)
 
 ```python
 x = torch.ones(4, 8, 16, 32)
@@ -339,7 +339,7 @@ print(f"Jaxtyping x.shape: {x.shape}")
 训练 GPT-3 (2020) 消耗了 3.14e23 FLOPs.  [https://lambdalabs.com/blog/demystifying-gpt-3](https://www.google.com/url?sa=E&q=https://lambdalabs.com/blog/demystifying-gpt-3)  
 训练 GPT-4 (2023) 预计将消耗 2e25 FLOPs.  [https://patmcguinness.substack.com/p/gpt-4-details-revealed](https://www.google.com/url?sa=E&q=https://patmcguinness.substack.com/p/gpt-4-details-revealed)
 
-![](.files/ikPmRWM968kchMP.png)
+![](images/l2-nvidia-gpu-specs.png)
 
 
 

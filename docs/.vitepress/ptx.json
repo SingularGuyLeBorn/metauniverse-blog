@@ -1,0 +1,44 @@
+{
+  "name": "ptx",
+  "scopeName": "source.ptx",
+  "fileTypes": ["ptx"],
+  "patterns": [
+    {
+      "name": "comment.line.double-slash.ptx",
+      "match": "//.*$"
+    },
+    {
+      "name": "comment.block.ptx",
+      "begin": "/\\*",
+      "end": "\\*/"
+    },
+    {
+      "name": "keyword.control.directive.ptx",
+      "match": "\\.(version|target|address_size|visible|entry|param|reg|f32|u32|u64|b32|b64|f64|pred|global|local|shared|const|tex|surf|func|alias|weak|common|extern|visible|file|loc|section|weak|global|ptr|const|v4|v2)\\b"
+    },
+    {
+      "name": "keyword.other.instruction.ptx",
+      "match": "\\b(add|sub|mul|div|mad|fma|mov|ld|st|cvt|setp|bra|ret|call|shl|shr|and|or|xor|not|abs|neg|min|max|sqrt|rcp|rsqrt|sin|cos|lg2|ex2|selp|slct|atom|red|vote|shfl|pmevent|trap|exit|membar|prefetch|prefetchu|isspacep|cvta|alloca)\\b"
+    },
+    {
+      "name": "entity.name.function.ptx",
+      "match": "\\b([a-zA-Z_][a-zA-Z0-9_$]*)\\b(?=:)"
+    },
+    {
+      "name": "variable.other.register.ptx",
+      "match": "[%][a-zA-Z0-9_$]+"
+    },
+    {
+      "name": "constant.numeric.ptx",
+      "match": "\\b([0-9]+|0x[0-9a-fA-F]+|0b[01]+)\\b"
+    },
+    {
+      "name": "constant.numeric.float.ptx",
+      "match": "\\b[0-9]*\\.[0-9]+([eE][-+]?[0-9]+)?\\b"
+    },
+    {
+      "name": "storage.modifier.ptx",
+      "match": "\\.(rn|rz|rm|rp|ftz|global|param|u32|f32|u64|f64|b32|b64|s32|s64|lo|hi|wide|approx|full|any|all|cta|gpu|sys|volatile|weak|ptr|u16|s16|b16|f16|f16x2)\\b"
+    }
+  ]
+}

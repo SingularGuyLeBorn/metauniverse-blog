@@ -1,97 +1,97 @@
-# 深入探讨: KenLM与N-gram语言模型
+﻿# 娣卞叆鎺㈣: KenLM涓嶯-gram璇█妯″瀷
 
-本文是Lecture 14的精英补充笔记，深入讲解N-gram语言模型的数学原理、Kneser-Ney平滑技术，以及KenLM的高效实现。
+鏈枃鏄疞ecture 14鐨勭簿鑻辫ˉ鍏呯瑪璁帮紝娣卞叆璁茶ВN-gram璇█妯″瀷鐨勬暟瀛﹀師鐞嗐€並neser-Ney骞虫粦鎶€鏈紝浠ュ強KenLM鐨勯珮鏁堝疄鐜般€?
 
 ---
 
-## 一、N-gram语言模型基础
+## 涓€銆丯-gram璇█妯″瀷鍩虹
 
-### 1.1 语言模型的目标
+### 1.1 璇█妯″瀷鐨勭洰鏍?
 
-语言模型的目标是估计**序列概率** $P(w_1, w_2, ..., w_n)$。
+璇█妯″瀷鐨勭洰鏍囨槸浼拌**搴忓垪姒傜巼** $P(w_1, w_2, ..., w_n)$銆?
 
-根据链式法则:
+鏍规嵁閾惧紡娉曞垯:
 $$P(w_1, ..., w_n) = \prod_{i=1}^{n} P(w_i | w_1, ..., w_{i-1})$$
 
-**问题**: 历史 $w_1, ..., w_{i-1}$ 可能非常长，无法直接估计。
+**闂**: 鍘嗗彶 $w_1, ..., w_{i-1}$ 鍙兘闈炲父闀匡紝鏃犳硶鐩存帴浼拌銆?
 
-**解决方案**:**马尔可夫假设** - 只考虑前 $n-1$ 个词
+**瑙ｅ喅鏂规**:**椹皵鍙か鍋囪** - 鍙€冭檻鍓?$n-1$ 涓瘝
 
 $$P(w_i | w_1, ..., w_{i-1}) \approx P(w_i | w_{i-n+1}, ..., w_{i-1})$$
 
-### 1.2 N-gram的阶数选择
+### 1.2 N-gram鐨勯樁鏁伴€夋嫨
 
-| 阶数 | 模型 | 条件 | 优缺点 |
+| 闃舵暟 | 妯″瀷 | 鏉′欢 | 浼樼己鐐?|
 |------|------|------|--------|
-| n=1 | Unigram | $P(w_i)$ | 简单但忽略上下文 |
-| n=2 | Bigram | $P(w_i \| w_{i-1})$ | 捕捉局部依赖 |
-| n=3 | Trigram | $P(w_i \| w_{i-2}, w_{i-1})$ | 更丰富的上下文 |
-| n=5 | 5-gram | $P(w_i \| w_{i-4:i-1})$ | KenLM默认，平衡性能和泛化 |
+| n=1 | Unigram | $P(w_i)$ | 绠€鍗曚絾蹇界暐涓婁笅鏂?|
+| n=2 | Bigram | $P(w_i \| w_{i-1})$ | 鎹曟崏灞€閮ㄤ緷璧?|
+| n=3 | Trigram | $P(w_i \| w_{i-2}, w_{i-1})$ | 鏇翠赴瀵岀殑涓婁笅鏂?|
+| n=5 | 5-gram | $P(w_i \| w_{i-4:i-1})$ | KenLM榛樿锛屽钩琛℃€ц兘鍜屾硾鍖?|
 
-### 1.3 最大似然估计
+### 1.3 鏈€澶т技鐒朵及璁?
 
-对于Bigram:
+瀵逛簬Bigram:
 $$P_{MLE}(w_i | w_{i-1}) = \frac{C(w_{i-1}, w_i)}{C(w_{i-1})}$$
 
-其中 $C(\cdot)$ 是计数函数。
+鍏朵腑 $C(\cdot)$ 鏄鏁板嚱鏁般€?
 
-**问题**: 未见过的n-gram概率为0！
+**闂**: 鏈杩囩殑n-gram姒傜巼涓?锛?
 
 ---
 
-## 二、平滑技术 (Smoothing)
+## 浜屻€佸钩婊戞妧鏈?(Smoothing)
 
-### 2.1 为什么需要平滑？
+### 2.1 涓轰粈涔堥渶瑕佸钩婊戯紵
 
-语料库是有限的，必然有大量未见过的n-gram。
+璇枡搴撴槸鏈夐檺鐨勶紝蹇呯劧鏈夊ぇ閲忔湭瑙佽繃鐨刵-gram銆?
 
-**Zipf's Law**: 词频分布极不均匀
-- 少数词出现非常频繁
-- 大量词只出现一两次
-- 更多词从未出现
+**Zipf's Law**: 璇嶉鍒嗗竷鏋佷笉鍧囧寑
+- 灏戞暟璇嶅嚭鐜伴潪甯搁绻?
+- 澶ч噺璇嶅彧鍑虹幇涓€涓ゆ
+- 鏇村璇嶄粠鏈嚭鐜?
 
-### 2.2 Add-One (Laplace) 平滑
+### 2.2 Add-One (Laplace) 骞虫粦
 
-最简单的方法:
+鏈€绠€鍗曠殑鏂规硶:
 $$P_{add-1}(w_i | w_{i-1}) = \frac{C(w_{i-1}, w_i) + 1}{C(w_{i-1}) + V}$$
 
-其中 $V$ 是词表大小。
+鍏朵腑 $V$ 鏄瘝琛ㄥぇ灏忋€?
 
-**问题**: 给未见n-gram分配了太多概率质量！
+**闂**: 缁欐湭瑙乶-gram鍒嗛厤浜嗗お澶氭鐜囪川閲忥紒
 
-### 2.3 Add-k 平滑
+### 2.3 Add-k 骞虫粦
 
-改进版:
+鏀硅繘鐗?
 $$P_{add-k}(w_i | w_{i-1}) = \frac{C(w_{i-1}, w_i) + k}{C(w_{i-1}) + kV}$$
 
-$k < 1$ 可以减少对未见n-gram的过度分配。
+$k < 1$ 鍙互鍑忓皯瀵规湭瑙乶-gram鐨勮繃搴﹀垎閰嶃€?
 
-### 2.4 Kneser-Ney平滑
+### 2.4 Kneser-Ney骞虫粦
 
-**核心思想**: 不只看频率，还要看**上下文多样性**。
+**鏍稿績鎬濇兂**: 涓嶅彧鐪嬮鐜囷紝杩樿鐪?*涓婁笅鏂囧鏍锋€?*銆?
 
-#### 绝对折扣 (Absolute Discounting)
+#### 缁濆鎶樻墸 (Absolute Discounting)
 
-首先，从每个计数中减去固定值 $d$:
+棣栧厛锛屼粠姣忎釜璁℃暟涓噺鍘诲浐瀹氬€?$d$:
 $$P_{abs}(w_i | w_{i-1}) = \frac{\max(C(w_{i-1}, w_i) - d, 0)}{C(w_{i-1})} + \lambda(w_{i-1}) P_{lower}(w_i)$$
 
-其中 $\lambda(w_{i-1})$ 是归一化因子。
+鍏朵腑 $\lambda(w_{i-1})$ 鏄綊涓€鍖栧洜瀛愩€?
 
-#### Continuation概率
+#### Continuation姒傜巼
 
-Kneser-Ney的创新：对于低阶分布，使用**continuation概率**而非频率:
+Kneser-Ney鐨勫垱鏂帮細瀵逛簬浣庨樁鍒嗗竷锛屼娇鐢?*continuation姒傜巼**鑰岄潪棰戠巼:
 
 $$P_{KN}(w) = \frac{|\{w' : C(w', w) > 0\}|}{|\{(w', w'') : C(w', w'') > 0\}|}$$
 
-**直觉**: 一个词的概率不取决于它出现多少次，而是它能跟多少不同的前缀搭配。
+**鐩磋**: 涓€涓瘝鐨勬鐜囦笉鍙栧喅浜庡畠鍑虹幇澶氬皯娆★紝鑰屾槸瀹冭兘璺熷灏戜笉鍚岀殑鍓嶇紑鎼厤銆?
 
-**例子**: "Francisco" 几乎只跟 "San" 搭配
-- 高频率，但低continuation概率
-- 作为回退，不应该得到高概率
+**渚嬪瓙**: "Francisco" 鍑犱箮鍙窡 "San" 鎼厤
+- 楂橀鐜囷紝浣嗕綆continuation姒傜巼
+- 浣滀负鍥為€€锛屼笉搴旇寰楀埌楂樻鐜?
 
 #### Modified Kneser-Ney
 
-使用多个折扣值 $d_1, d_2, d_{3+}$，根据原始计数选择:
+浣跨敤澶氫釜鎶樻墸鍊?$d_1, d_2, d_{3+}$锛屾牴鎹師濮嬭鏁伴€夋嫨:
 
 $$d = \begin{cases}
 0 & \text{if } C = 0 \\
@@ -102,44 +102,44 @@ d_{3+} & \text{if } C \geq 3
 
 ---
 
-## 三、回退机制 (Backoff)
+## 涓夈€佸洖閫€鏈哄埗 (Backoff)
 
-### 3.1 Katz回退
+### 3.1 Katz鍥為€€
 
-当高阶n-gram未见过时，回退到低阶:
+褰撻珮闃秐-gram鏈杩囨椂锛屽洖閫€鍒颁綆闃?
 
 $$P_{BO}(w_i | w_{i-n+1:i-1}) = \begin{cases}
 P^*(w_i | w_{i-n+1:i-1}) & \text{if } C(w_{i-n+1:i}) > k \\
 \alpha(w_{i-n+1:i-1}) \cdot P_{BO}(w_i | w_{i-n+2:i-1}) & \text{otherwise}
 \end{cases}$$
 
-其中:
-- $P^*$ 是折扣后的概率
-- $\alpha$ 是回退权重，确保概率归一化
+鍏朵腑:
+- $P^*$ 鏄姌鎵ｅ悗鐨勬鐜?
+- $\alpha$ 鏄洖閫€鏉冮噸锛岀‘淇濇鐜囧綊涓€鍖?
 
-### 3.2 插值 (Interpolation)
+### 3.2 鎻掑€?(Interpolation)
 
-另一种方法是始终混合不同阶:
+鍙︿竴绉嶆柟娉曟槸濮嬬粓娣峰悎涓嶅悓闃?
 
 $$P_{interp}(w_i | w_{i-n+1:i-1}) = \lambda_n P_n + \lambda_{n-1} P_{n-1} + ... + \lambda_1 P_1$$
 
-其中 $\sum \lambda_i = 1$。
+鍏朵腑 $\sum \lambda_i = 1$銆?
 
-### 3.3 Kneser-Ney的完整公式
+### 3.3 Kneser-Ney鐨勫畬鏁村叕寮?
 
-结合回退和continuation概率:
+缁撳悎鍥為€€鍜宑ontinuation姒傜巼:
 
 $$P_{KN}(w_i | w_{i-n+1:i-1}) = \frac{\max(C(w_{i-n+1:i}) - d, 0)}{C(w_{i-n+1:i-1})} + \gamma(w_{i-n+1:i-1}) P_{KN}(w_i | w_{i-n+2:i-1})$$
 
-其中低阶 $P_{KN}$ 使用continuation计数。
+鍏朵腑浣庨樁 $P_{KN}$ 浣跨敤continuation璁℃暟銆?
 
 ---
 
-## 四、KenLM实现细节
+## 鍥涖€並enLM瀹炵幇缁嗚妭
 
-### 4.1 高效存储：Trie结构
+### 4.1 楂樻晥瀛樺偍锛歍rie缁撴瀯
 
-KenLM使用**压缩Trie**存储n-gram:
+KenLM浣跨敤**鍘嬬缉Trie**瀛樺偍n-gram:
 
 ```
       ROOT
@@ -151,45 +151,45 @@ KenLM使用**压缩Trie**存储n-gram:
  sat
 ```
 
-每个节点存储:
-- **概率**: 量化后的log概率
-- **回退权重**: 量化后的回退值
-- **指针**: 指向子节点
+姣忎釜鑺傜偣瀛樺偍:
+- **姒傜巼**: 閲忓寲鍚庣殑log姒傜巼
+- **鍥為€€鏉冮噸**: 閲忓寲鍚庣殑鍥為€€鍊?
+- **鎸囬拡**: 鎸囧悜瀛愯妭鐐?
 
-### 4.2 量化 (Quantization)
+### 4.2 閲忓寲 (Quantization)
 
-为了节省空间，KenLM对概率和回退权重进行量化:
+涓轰簡鑺傜渷绌洪棿锛孠enLM瀵规鐜囧拰鍥為€€鏉冮噸杩涜閲忓寲:
 
 ```python
-# 伪代码
+# 浼唬鐮?
 def quantize(value, bits=8):
-    # 将连续值映射到256个离散级别
+    # 灏嗚繛缁€兼槧灏勫埌256涓鏁ｇ骇鍒?
     min_val, max_val = get_range(all_values)
     level = int((value - min_val) / (max_val - min_val) * (2**bits - 1))
     return level
 ```
 
-8-bit量化可以将存储减少4倍，精度损失可忽略。
+8-bit閲忓寲鍙互灏嗗瓨鍌ㄥ噺灏?鍊嶏紝绮惧害鎹熷け鍙拷鐣ャ€?
 
-### 4.3 查询流程
+### 4.3 鏌ヨ娴佺▼
 
 ```python
 def query_kenlm(sentence, model):
-    """计算句子的log概率"""
+    """璁＄畻鍙ュ瓙鐨刲og姒傜巼"""
     tokens = tokenize(sentence)
     log_prob = 0.0
     state = model.begin_state()
     
     for token in tokens:
-        # 尝试最长匹配
+        # 灏濊瘯鏈€闀垮尮閰?
         prob, new_state = model.score(state, token)
-        log_prob += prob  # log10概率
+        log_prob += prob  # log10姒傜巼
         state = new_state
     
     return log_prob
 
 def model.score(state, token):
-    """查询单个token的概率"""
+    """鏌ヨ鍗曚釜token鐨勬鐜?""
     context = get_context_from_state(state)
     
     for order in range(max_order, 0, -1):
@@ -199,53 +199,53 @@ def model.score(state, token):
             new_state = update_state(context, token)
             return prob, new_state
         else:
-            # 回退：乘以回退权重，尝试低阶
+            # 鍥為€€锛氫箻浠ュ洖閫€鏉冮噸锛屽皾璇曚綆闃?
             backoff = trie[context[-(order-1):]].backoff
             prob += backoff
-            context = context[1:]  # 缩短上下文
+            context = context[1:]  # 缂╃煭涓婁笅鏂?
     
-    # 回退到unigram
+    # 鍥為€€鍒皍nigram
     return unigram_prob[token], reset_state()
 ```
 
-### 4.4 KenLM vs 其他实现
+### 4.4 KenLM vs 鍏朵粬瀹炵幇
 
-| 特性 | KenLM | SRILM | 自定义Python |
+| 鐗规€?| KenLM | SRILM | 鑷畾涔塒ython |
 |------|-------|-------|--------------|
-| 速度 | 极快 | 快 | 慢 |
-| 内存 | 低（压缩） | 中 | 高 |
-| 最大阶数 | 无限制 | 通常5-7 | 自定义 |
-| 批量查询 | 支持 | 支持 | 需自行实现 |
+| 閫熷害 | 鏋佸揩 | 蹇?| 鎱?|
+| 鍐呭瓨 | 浣庯紙鍘嬬缉锛?| 涓?| 楂?|
+| 鏈€澶ч樁鏁?| 鏃犻檺鍒?| 閫氬父5-7 | 鑷畾涔?|
+| 鎵归噺鏌ヨ | 鏀寔 | 鏀寔 | 闇€鑷瀹炵幇 |
 
-### 4.5 训练KenLM模型
+### 4.5 璁粌KenLM妯″瀷
 
 ```bash
-# 1. 准备文本数据 (每行一个句子)
+# 1. 鍑嗗鏂囨湰鏁版嵁 (姣忚涓€涓彞瀛?
 # corpus.txt
 
-# 2. 使用lmplz训练
+# 2. 浣跨敤lmplz璁粌
 lmplz -o 5 \        # 5-gram
-      -S 80% \      # 使用80%内存
+      -S 80% \      # 浣跨敤80%鍐呭瓨
       --discount_fallback \
       < corpus.txt \
       > model.arpa
 
-# 3. 转换为二进制格式 (更快加载)
+# 3. 杞崲涓轰簩杩涘埗鏍煎紡 (鏇村揩鍔犺浇)
 build_binary model.arpa model.binary
 ```
 
 ---
 
-## 五、在数据过滤中的应用
+## 浜斻€佸湪鏁版嵁杩囨护涓殑搴旂敤
 
-### 5.1 质量评分
+### 5.1 璐ㄩ噺璇勫垎
 
-使用困惑度 (Perplexity) 评估文本质量:
+浣跨敤鍥版儜搴?(Perplexity) 璇勪及鏂囨湰璐ㄩ噺:
 
 $$PPL(w_1, ..., w_n) = P(w_1, ..., w_n)^{-1/n}$$
 
-**低困惑度** = 模型预测好 = 文本"正常"
-**高困惑度** = 模型预测差 = 文本"异常"
+**浣庡洶鎯戝害** = 妯″瀷棰勬祴濂?= 鏂囨湰"姝ｅ父"
+**楂樺洶鎯戝害** = 妯″瀷棰勬祴宸?= 鏂囨湰"寮傚父"
 
 ```python
 import kenlm
@@ -253,30 +253,31 @@ import kenlm
 model = kenlm.Model("wiki.binary")
 
 def perplexity_filter(text, threshold=500):
-    """基于困惑度过滤低质量文本"""
+    """鍩轰簬鍥版儜搴﹁繃婊や綆璐ㄩ噺鏂囨湰"""
     ppl = model.perplexity(text)
     return ppl < threshold
 ```
 
-### 5.2 DSIR中的应用
+### 5.2 DSIR涓殑搴旂敤
 
-在DSIR中，使用两个KenLM模型计算重要性权重:
+鍦―SIR涓紝浣跨敤涓や釜KenLM妯″瀷璁＄畻閲嶈鎬ф潈閲?
 
 ```python
-target_model = kenlm.Model("high_quality.binary")  # 如Wikipedia
-raw_model = kenlm.Model("raw_data.binary")         # 如Common Crawl
+target_model = kenlm.Model("high_quality.binary")  # 濡俉ikipedia
+raw_model = kenlm.Model("raw_data.binary")         # 濡侰ommon Crawl
 
 def importance_weight(text):
     log_p_target = target_model.score(text)
     log_p_raw = raw_model.score(text)
-    return 10 ** (log_p_target - log_p_raw)  # 转换回概率比
+    return 10 ** (log_p_target - log_p_raw)  # 杞崲鍥炴鐜囨瘮
 ```
 
 ---
 
-## 参考资料
+## 鍙傝€冭祫鏂?
 
 1. Chen, S. F., & Goodman, J. (1999). An empirical study of smoothing techniques for language modeling
 2. Kneser, R., & Ney, H. (1995). Improved backing-off for m-gram language modeling
 3. Heafield, K. (2011). KenLM: Faster and Smaller Language Model Queries
 4. Jurafsky, D., & Martin, J. (2023). Speech and Language Processing, Chapter 3
+

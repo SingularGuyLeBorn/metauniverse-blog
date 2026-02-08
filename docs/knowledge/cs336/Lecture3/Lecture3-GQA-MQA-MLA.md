@@ -66,7 +66,7 @@ Transformer架构的出现可以说是全球人工智能快速发展的转折点
 
 本文将详细介绍注意力机制从**MHA (Multi-Head Attention)到MQA (Multi-Query Attention)**、**GQA (Grouped-Query Attention)**,再到**MLA (Multi-head Latent Attention)**的演变过程. 我们将深入探讨每个变体的设计理念、实现细节、数学公式推导,并着重分析它们如何影响KV Cache的存储效率,以及在性能和成本之间做出的权衡.
 
-![](.files/MPVUL6QYTu6L9G9.png)
+<!-- ![](images/l3-kv-cache-bottleneck.png) -->
 
 
 
@@ -129,11 +129,11 @@ KV Cache通常用于存储模型在处理序列数据时生成的键值对,以�
 
 **MHA**是**Transformer**架构的基石. 它的核心思想是将单一的注意力计算分解为多个并行的、独立的"头" ($N_q\_heads$),每个头在输入的不同表示子空间中学习注意力权重,最后将所有头的输出聚合起来. 这使得模型能同时关注来自不同位置、不同方面的多种信息.
 
-![](.files/q2RkH83IUSPRQGR.jpg)
+<!-- ![](images/l3-mha-heads-split.jpg) -->
 
 
 
-![](.files/Cby5OElrnHBN5RX.jpg)
+<!-- ![](images/l3-mha-computation-flow.jpg) -->
 
 
 
@@ -327,7 +327,7 @@ KV Cache的总大小(以16位浮点数为例):
 
 面对**MHA**带来的巨大**KV Cache**压力,**MQA**提出了一种简单而有效的解决方案: 让所有查询头共享**同一份**Key和Value.
 
-![](.files/MF96vdyXq1Q101e.jpg)
+<!-- ![](images/l3-mha-vs-mqa.jpg) -->
 
 
 
@@ -493,7 +493,7 @@ KV Cache的总大小(以16位浮点数为例):
 
 **GQA**是**MHA**和**MQA**之间的一种折中方案. 它认识到**MHA**的KV头可能存在冗余,而**MQA**的单一KV头又可能限制了模型性能. 因此,**GQA**将查询头分组,每组共享一对K/V头.
 
-![](.files/13ArblD3v4ZkTg7.jpg)
+<!-- ![](images/l3-mha-gqa-mqa-comparison.jpg) -->
 
 
 
@@ -685,9 +685,9 @@ $V_{cache\_current} = [v_{1,1}, v_{2,1}, v_{3,1}] \in \mathbb{R}^{1 \times 1 \ti
 
 **MLA**(来自**DeepSeek-V2**) 是一种更激进的优化. 它不满足于仅仅减少KV头的数量,而是从根本上改变了KV的生成方式. 其核心思想是通过**低秩投影**来压缩KV信息,并利用矩阵运算的性质,在**推理时**将大部分头相关的信息"吸收"到查询侧,从而只缓存一个非常紧凑的、所有头共享的**潜在向量 (Latent Vector)**.
 
-![](.files/DUnd88nsYwXY6jx.png)
+<!-- ![](images/l3-mla-architecture.png) -->
 
-![](.files/aI6o1VQ81EZaCMx.png)
+<!-- ![](images/l3-mla-latent-vector.png) -->
 
 > 图 4: **MLA**的复杂结构,结合了低秩投影(**Down/Up Proj**)和解耦的**RoPE**处理.
 

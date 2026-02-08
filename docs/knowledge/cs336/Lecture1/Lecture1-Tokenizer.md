@@ -11,7 +11,7 @@
 A tokenizer is something that converts between strings and sequences of integer.
 正如这句话所说, 分词器将原始文本字符串, 转换为一个整数序列 (即Token ID), 反之亦然. 每一个ID都对应着词汇表 (Vocabulary) 中的一个特定“片段” (Token).
 
-![img](tokenizer%E5%BD%A2%E8%B1%A1%E8%A7%A3%E9%87%8A.png)
+![img](images/l1-bpe-tokenizer-example.png)
 
 这个过程可以分解为三步:
 
@@ -68,7 +68,7 @@ BPE的实现分为两个阶段: **训练阶段**(学习合并规则) 和**分词
 
 ### 4. 实例分析
 
-![](GPTtokenizer.png)
+![](images/l1-gpt-tokenizer.png)
 图片来源: [https://platform.openai.com/tokenizer](https://platform.openai.com/tokenizer)
 
 > **句子:** "A tokenizer is something that converts between strings and sequences of integer"
