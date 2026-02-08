@@ -1,0 +1,63 @@
+/* Custom Markdown Styles */
+
+/* Mark (Highlighter) */
+mark {
+  background-color: rgba(255, 212, 0, 0.3);
+  color: inherit;
+  padding: 0.1em 0.3em;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.dark mark {
+  background-color: rgba(255, 212, 0, 0.2);
+  color: #ffd700;
+}
+
+/* Insert (Underline) */
+ins {
+  text-decoration: none;
+  border-bottom: 2px solid var(--vp-c-brand);
+  color: var(--vp-c-brand-text);
+  padding-bottom: 1px;
+}
+
+/* Subscript & Superscript */
+sub, sup {
+  font-size: 0.75em;
+  line-height: 0;
+  position: relative;
+  vertical-align: baseline;
+}
+
+sup {
+  top: -0.5em;
+}
+
+sub {
+  bottom: -0.25em;
+}
+
+/* Abbreviation */
+abbr {
+  text-decoration: underline dotted;
+  cursor: help;
+  position: relative;
+}
+
+abbr[title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  background: var(--vp-c-bg-soft);
+  color: var(--vp-c-text-1);
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
