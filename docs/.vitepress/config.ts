@@ -144,6 +144,9 @@ export default defineConfig({
     ['meta', { name: 'apple-mobile-web-app-capable', content: 'yes' }], // 保持兼容性
     ['link', { rel: 'icon', href: '/logo.svg' }],
     ['link', { rel: 'preconnect', href: 'https://cdn.jsdelivr.net' }],
+    // KaTeX for PPOInfo.vue
+    ['link', { rel: 'stylesheet', href: 'https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css' }],
+    ['script', { src: 'https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js' }],
     // 初始化脚本 - 避免模式切换闪烁
     ['script', {}, `
       (function() {

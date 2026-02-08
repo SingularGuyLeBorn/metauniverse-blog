@@ -43,6 +43,12 @@ import Breadcrumbs from "./components/features/Breadcrumbs.vue";
 import ImageLightbox from "./components/features/ImageLightbox.vue";
 import ImageCaptions from "./components/features/ImageCaptions.vue";
 
+// PPO Visualization Components
+import PPOHeader from "./components/features/RL/ppo/components/PPOHeader.vue";
+import PPODependencyGraph from "./components/features/RL/ppo/components/PPODependencyGraph.vue"; // Re-import
+import PPOInfo from "./components/features/RL/ppo/components/PPOInfo.vue";
+import PPOCodeTrace from "./components/features/RL/ppo/components/PPOCodeTrace.vue";
+
 
 export default {
   extends: DefaultTheme,
@@ -119,6 +125,12 @@ export default {
     app.component("Breadcrumbs", Breadcrumbs);
     app.component("ImageLightbox", ImageLightbox);
     app.component("ImageCaptions", ImageCaptions);
+
+    // Register PPO Visualization Components
+    app.component("PPOHeader", PPOHeader);
+    app.component("PPODependencyGraph", PPODependencyGraph);
+    app.component("PPOInfo", PPOInfo);
+    app.component("PPOCodeTrace", PPOCodeTrace);
     
     // 客户端初始化
     if (typeof window !== "undefined") {
