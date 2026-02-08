@@ -17,7 +17,7 @@
 - **残差连接与规范化**: 在每个子层(注意力、FFN)之后进行加法(Add)和层规范化(Norm),这被称为**Post-Norm**.
 - **输出层**: 最后通过一个线性层和Softmax函数得到概率分布.
 
-![](images/l3-original-transformer-arch.png)
+![](.files/oOtqV3jTy0DikZ7.png)
 
 ### 现代 Transformer 变体
 
@@ -28,7 +28,7 @@
 - **门控激活单元 (GLU)**: 前馈网络层(FFN)使用 [Gated Activations (GLU)](./Lecture3-Gated-Activations.md),特别是SwiGLU,而不是标准的ReLU.
 - **无偏置项**: 线性层和规范化层中通常省略了偏置(bias)项.
 
-![](images/l3-modern-transformer-arch.png)
+![](.files/ZDU870abJbALu0M.png)
 
 这些改变并非随意为之,它们是过去数年里,从大量模型(如Llama系列、PaLM、GPT系列等)的实践中演化出的共识.
 
@@ -87,7 +87,7 @@
    很早的时候研究者们就发现,将归一化模块前置到非残差模块前端(例如FFN,MHA)能在多项指标上表现更优.
 
 
-![](images/l3-pre-norm-vs-post-norm.png)
+![](.files/gJZJgBZjw5NUxBK.png)
 
 学界也对这些优势做了许多解释
 
@@ -95,7 +95,7 @@
 
 但目前的主流解释是. 预归一化本身就是更稳定的训练架构,因此现在它主要作为稳定训练的手段. 如下图右图,后归一化中梯度范数的峰值出现更频繁.
 
-![](images/l3-post-norm-grad-stability.png)
+![](.files/javRkmQ7APH89zq.png)
 
 这就引入了一个巨大的创新点:
 
@@ -103,7 +103,7 @@
 - 为什么不能前后都放一个归一化呢？Grok&Gemma2采用了这个方案
 - 为什么不能多放几个呢？
 
-![](images/l3-norm-placement-variants.png)
+![](.files/0dJIRaHjNaluDul.png)
 
 但最近有一些创新方案,在后面会详述
 
@@ -155,15 +155,15 @@
 
 大致的分析如下
 
-![](images/l3-transformer-op-breakdown.png)
+![](.files/p0U9TRASIGvgDkx.png)
 
 矩阵乘法类运算占比高达99.8%,似乎节省0.17%的Norm运算毫无意义. 但现代LLM结构中,不光关注浮点操作. 因此浮点操作固然重要,但并非唯一考量,内存移动优化同样重要. 实际上Norm操作占用了25%的运行时间,因为Norm操作会带来巨大的内存搬运开销. 性能不能光考虑浮点计算能力,还要考虑内存访问效率
 
-![](images/l3-norm-memory-bandwidth-impact.png)
+![](.files/evhAeHIAMXIziUo.png)
 
 图中是一些主要研究,其中Naron团队在2020年的消融实验很有代表性. 可以看到 RMS Norm每秒处理的迭代次数相比标准Transformer ,从3.5/s达到了3.68/s. 虽然提升幅度不大,但这是零成本得到的,最重要的是最终的损失函数比Transformer低,可以说实现了运行效率的提升.
 
-![](images/l3-rmsnorm-efficiency-gain.png)
+![](.files/XZbbYQRhliXhWmi.png)
 
 这两个选择的背后,是业界对**训练稳定性**和系统效率(尤其是内存带宽)的深刻理解.
 
@@ -205,9 +205,9 @@ $$
 - **早期模型**: 使用**ReLU**(如原始Transformer, T5) 或**GeLU** (如GPT系列).
 - **现代模型**: 绝大多数模型,特别是2023年之后发布的,都转向了**门控线性单元(Gated Linear Units, GLU)的变体,如SwiGLU**(Llama, PaLM) 和**GeGLU** (T5-v1.1, Gemma).
 
-![](images/l3-glu-activation-variants.png)
+![](.files/NVfFLLRWXqdtNMJ.png)
 
-![](images/l3-swiglu-geglu-formulas.png)
+![](.files/UQnJoPZ7x08rmkK.png)
 
 其中,V这个参数矩阵通常按照w的2/3来设置,这没有什么数学解释,只是工程实践. (后面会再详细解释)
 
@@ -262,13 +262,13 @@ $$
   - **例外**: T5模型曾大胆地使用了高达64倍的比例($d_{ff}=65536,d_{model}=1024$),但其后续版本T5-v1.1又回归到了使用更标准的GELU系数,2.5倍,这暗示了超大比例可能并非最优.
 
 
-![](images/l3-ffn-ratio-comparison.png)
+![](.files/7JJtbYC33Pu5hzA.png)
 
 ````
 Jared Kaplan的论文中有一个关键图表
 ````
 
-![](images/l3-ffn-width-performance.png)
+![](.files/D6iq8hhmh1A3wOn.png)
 
 比例在1-10的时候 都是接近最优效果的
 
@@ -277,7 +277,7 @@ Jared Kaplan的论文中有一个关键图表
   理论上头数是越多越好,但实际上并非如此,其实甚至不是理论上,是直觉上如此(但这个直觉可能来自于scaling law即参数越多越好)
 
 
-![](images/l3-attention-heads-ratio.png)
+![](.files/AHoG1qLikrFabdf.png)
 
 大多数模型都在1,T5又是唯一显眼包,这个团队似乎特别喜欢大
 
@@ -289,13 +289,13 @@ Jared Kaplan的论文中有一个关键图表
   - 大多数成功的模型似乎都找到了一个“甜蜜点”,该值大约在**100到200**之间. 例如,GPT-3、OPT、Mistral等模型的宽高比都在128左右.
 
 
-![](images/l3-model-aspect-ratio-distribution.png)
+![](.files/vkOjeAuT3EwMlko.png)
 
 - 这个选择也受到系统并行化策略的影响:极深的模型有利于流水线并行,而极宽的模型有利于张量并行.
 
-![](images/l3-parallel-scaling-efficiency.png)
+![](.files/wPEUGmk9OJL0dog.png)
 
-![](images/l3-width-depth-tradeoff.png)
+![](.files/rQPB9pSEGPFQPcI.png)
 
 横坐标代表模型大小,纵坐标代表损失差异的百分比变化.
 
@@ -362,7 +362,7 @@ $softmax(x_i) = \frac{e^{x_i}}{\sum_{j} e^{x_j}}$
 
 - **Softmax 计算回顾 (左侧公式框):**
 
-![](images/l3-softmax-partition-function.png)
+![](.files/ZRWaKIzNgfGsiws.png)
 
 - 模型对词汇表中的每个词都输出一个分数,称为 logit,记为 $U(x)$.
 - 一个词 $r$ 的概率 $P(x)$ 是通过将其 logit $U_r(x)$ 取指数,然后除以所有词的 logit 取指数后的总和来计算的.这个总和就是**配分函数 (Partition Function)** $Z(x)$.
@@ -399,7 +399,7 @@ Z-Loss 解决了输出层的问题,但 Transformer 内部的每一个自注意�
 
 #### b. QK-Norm 的解决方案
 
-![](images/l3-qknorm-mechanism.png)
+![](.files/2kNm75WinJhpn5F.png)
 
 
 

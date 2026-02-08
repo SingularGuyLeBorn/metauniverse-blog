@@ -1,448 +1,447 @@
-﻿# Lecture 13: 璁粌鏁版嵁绛栫暐 (Training Data Strategy)
+# Lecture 13: 训练数据策略 (Training Data Strategy)
 
-**璇剧▼**: CS336 路**涓婚**: 棰勮缁冦€佷腑鏈熻缁冦€佸悗鏈熻缁冪殑鏁版嵁鏉ユ簮涓庡鐞?
+**课程**: CS336 ·**主题**: 预训练、中期训练、后期训练的数据来源与处理
 
 ---
 
-## 0. 璇剧▼寮€鍦? 鏁版嵁鏄渶閲嶈鐨?
+## 0. 课程开场: 数据是最重要的
 
-> **璁插笀 Hot Take**: 鏁版嵁鏄缁冭瑷€妯″瀷鏈€閲嶈鐨勪簨鎯?
+> **讲师 Hot Take**: 数据是训练语言模型最重要的事情.
 
-涔嬪墠鐨勮搴ц璁轰簡**缁欏畾鏁版嵁**濡備綍璁粌妯″瀷 (鏋舵瀯銆佷紭鍖栧櫒銆乀okenization銆丼caling Laws銆佸苟琛岃绠?. 鐜板湪, 鎴戜滑璁ㄨ**璁粌浠€涔堟暟鎹?*.
+之前的讲座讨论了**给定数据**如何训练模型 (架构、优化器、Tokenization、Scaling Laws、并行计算). 现在, 我们讨论**训练什么数据**.
 
-**涓轰粈涔堟暟鎹渶閲嶈?** 鐪嬬湅鍏徃瀹為檯鎶湶浠€涔?
+**为什么数据最重要?** 看看公司实际披露什么:
 
-![Llama 3 鏁版嵁鎻忚堪 (鍑犱箮娌℃湁淇℃伅)](images/l13-llama3-data.png)
+![Llama 3 数据描述 (几乎没有信息)](images/llama3-data.png)
 
-鍗充娇鏄紑婧愭ā鍨?(濡?Llama 3, DeepSeek), 涔熷畬鍏ㄦ姭闇叉灦鏋勭敋鑷宠缁冪粏鑺? 浣?*鍏充簬鏁版嵁鍑犱箮浠€涔堥兘涓嶈**:
+即使是开源模型 (如 Llama 3, DeepSeek), 也完全披露架构甚至训练细节, 但**关于数据几乎什么都不说**:
 
 > "We create our dataset from a variety of data sources containing knowledge until the end of 2023."
 
-**淇濆瘑鍘熷洜**:
+**保密原因**:
 
-1. **绔炰簤鍔ㄦ€?*: 鏁版嵁鏄牳蹇冪珵浜夊姏
-2. **鐗堟潈璐ｄ换**: 涓嶆兂琚捣璇?
+1. **竞争动态**: 数据是核心竞争力
+2. **版权责任**: 不想被起诉
 
 ---
 
-## 1. 璁粌闃舵姒傝
+## 1. 训练阶段概览
 
-鏁版嵁宸ヤ綔璐┛璁粌鐨勫悇涓樁娈? 浣嗕晶閲嶇偣涓嶅悓:
+数据工作贯穿训练的各个阶段, 但侧重点不同:
 
-| 闃舵                               | 鏁版嵁鐗圭偣                                  | 鐩爣               |
+| 阶段                               | 数据特点                                  | 目标               |
 | ---------------------------------- | ----------------------------------------- | ------------------ |
-| **Pre-training (棰勮缁?**    | 澶ч噺浣庤川閲忓師濮嬫暟鎹?(閫氬父鏉ヨ嚜缃戠粶)         | 鑾峰緱骞挎硾鐨勮瑷€鑳藉姏 |
-| **Mid-training (涓湡璁粌)**  | 杈冨皬閲忛珮璐ㄩ噺鏁版嵁 (濡傛暟瀛︺€佷唬鐮併€侀暱涓婁笅鏂? | 澧炲己鐗瑰畾鑳藉姏       |
-| **Post-training (鍚庢湡璁粌)** | 鎸囦护璺熼殢鏁版嵁銆佸璇濇暟鎹€丷LHF              | 浣挎ā鍨嬪彲瀵硅瘽銆佸畨鍏?|
+| **Pre-training (预训练)**    | 大量低质量原始数据 (通常来自网络)         | 获得广泛的语言能力 |
+| **Mid-training (中期训练)**  | 较小量高质量数据 (如数学、代码、长上下文) | 增强特定能力       |
+| **Post-training (后期训练)** | 指令跟随数据、对话数据、RLHF              | 使模型可对话、安全 |
 
-**鏈**:
+**术语**:
 
-- **Base Model (鍩虹妯″瀷)**: Pre-training + Mid-training 鍚庣殑妯″瀷
-- **Instruct Model (鎸囦护妯″瀷)**: Post-training 鍚庣殑妯″瀷
+- **Base Model (基础模型)**: Pre-training + Mid-training 后的模型
+- **Instruct Model (指令模型)**: Post-training 后的模型
 
-### 1.1 绀轰緥: OLMo (AI2)
+### 1.1 示例: OLMo (AI2)
 
 **Pre-training**:
 
-![OLMo Pre-training 鏁版嵁娣峰悎](images/l13-olmo2-pretraining.png)
+![OLMo Pre-training 数据混合](images/olmo2-pretraining.png)
 
-- DCLM Baseline: 3.7T tokens (涓讳綋)
-- 浠ｇ爜銆佸鏈鏂囥€佹暟瀛︺€乄ikipedia
+- DCLM Baseline: 3.7T tokens (主体)
+- 代码、学术论文、数学、Wikipedia
 
 **Mid-training**:
 
-![OLMo Mid-training 鏁版嵁娣峰悎](images/l13-olmo2-dolmino.png)
+![OLMo Mid-training 数据混合](images/olmo2-dolmino.png)
 
-- 浠嶇劧鏈?DCLM Baseline, 浣嗕粠 3.7T 杩囨护鍒?700B
-- 鏂板鍚堟垚鏁版嵁, 鐢氳嚦 GSM8K 璁粌闆?
+- 仍然有 DCLM Baseline, 但从 3.7T 过滤到 700B
+- 新增合成数据, 甚至 GSM8K 训练集
 
 **Post-training**:
 
-![Tulu Post-training 鏁版嵁](images/l13-tulu.png)
+![Tulu Post-training 数据](images/tulu.png)
 
-- 鍚勭鏉ユ簮鐨勫璇濇暟鎹?
-- 澶ч噺鍚堟垚鏁版嵁
+- 各种来源的对话数据
+- 大量合成数据
 
-> **鍏抽敭娲炲療**: 浠?澶ч噺浣庤川閲?鍒?灏戦噺楂樿川閲?, 鐣岄檺妯＄硦浣嗚秼鍔挎槑纭?
+> **关键洞察**: 从"大量低质量"到"少量高质量", 界限模糊但趋势明确.
 
 ---
 
-## 2. 棰勮缁冩暟鎹? 鍘嗗彶婕旇繘
+## 2. 预训练数据: 历史演进
 
 ### 2.1 BERT (2018): Books + Wikipedia
 
 **BooksCorpus**:
 
-- 鏉ユ簮: Smashwords (2008 骞存垚绔嬬殑鑷嚭鐗堝钩鍙?
-- 鍐呭: 7,000 鏈厤璐硅嚜鍑虹増涔︾睄
-- 鐜扮姸: 鍥犺繚鍙嶆湇鍔℃潯娆惧凡琚笅鏋?
+- 来源: Smashwords (2008 年成立的自出版平台)
+- 内容: 7,000 本免费自出版书籍
+- 现状: 因违反服务条款已被下架
 
 **Wikipedia**:
 
-- 2001 骞存垚绔? 鐩墠 6200 涓囩瘒鏂囩珷, 329 绉嶈瑷€
-- **涓嶅寘鍚師鍒涙€濇兂**: 鏃犺鐐广€佹棤涓汉缃戦〉
-- **鍩轰簬鍙煡璇佹€?*: 闇€瑕佸彲闈犳潵婧?
-- **瀹氭湡 Dump**: 姣忛殧鍑犲懆鎻愪緵瀹屾暣鏁版嵁涓嬭浇
+- 2001 年成立, 目前 6200 万篇文章, 329 种语言
+- **不包含原创思想**: 无观点、无个人网页
+- **基于可查证性**: 需要可靠来源
+- **定期 Dump**: 每隔几周提供完整数据下载
 
-> **鏁版嵁鎶曟瘨璀﹀憡**: 鏀诲嚮鑰呭彲浠ュ湪 Wikipedia Dump 鍓嶆敞鍏ユ伓鎰忕紪杈? 鍦ㄥ洖婊氬墠琚敹褰? 杩欏凡琚敤浜庢搷绾佃瑷€妯″瀷鐨勬儏鎰熷垽鏂?(濡傚"iPhone"浜х敓璐熼潰鎯呯华).
+> **数据投毒警告**: 攻击者可以在 Wikipedia Dump 前注入恶意编辑, 在回滚前被收录. 这已被用于操纵语言模型的情感判断 (如对"iPhone"产生负面情绪).
 
 ### 2.2 GPT-2 (2019): WebText
 
-**鏍稿績鎬濊矾**: Web 寰堝ぇ浣嗚川閲忎綆, 濡備綍蹇€熻幏寰楅珮璐ㄩ噺瀛愰泦?
+**核心思路**: Web 很大但质量低, 如何快速获得高质量子集?
 
-**鏂规硶**: 鍒╃敤 Reddit 浣滀负"璐ㄩ噺杩囨护鍣?
+**方法**: 利用 Reddit 作为"质量过滤器"
 
-- 鏀堕泦 Reddit 甯栧瓙涓?**karma 鈮?3** 鐨勫閾?
-- 缁撴灉: 800 涓囬〉闈? 40GB 鏂囨湰
+- 收集 Reddit 帖子中 **karma ≥ 3** 的外链
+- 结果: 800 万页面, 40GB 文本
 
-**OpenWebText**: WebText 鐨勫紑婧愬鍒剁増鏈?
+**OpenWebText**: WebText 的开源复制版本
 
-### 2.3 Common Crawl: 瀛︽湳鐣岀殑"浜掕仈缃?
+### 2.3 Common Crawl: 学术界的"互联网"
 
-**[娣卞叆鎺㈣: Common Crawl 涓庣綉缁滅埇铏玗(./Lecture13-Common-Crawl.md)**
+**[深入探讨: Common Crawl 与网络爬虫](./Lecture13-Common-Crawl.md)**
 
-**鍩烘湰姒傚喌**:
+**基本概况**:
 
-- 2007 骞存垚绔嬬殑闈炶惀鍒╃粍缁?
-- 姣忔湀杩涜涓€娆＄綉缁滅埇铏? 鑷充粖宸叉湁 ~100 娆?
-- 鏈€鏂扮埇铏? 2025 骞?4 鏈?
+- 2007 年成立的非营利组织
+- 每月进行一次网络爬虫, 至今已有 ~100 次
+- 最新爬虫: 2025 年 4 月
 
-**涓ょ鏍煎紡**:
+**两种格式**:
 
-- **WARC**: 鍘熷 HTTP 鍝嶅簲 (濡?HTML)
-- **WET**: 杞崲涓虹函鏂囨湰 (鏈夋崯杩囩▼)
+- **WARC**: 原始 HTTP 响应 (如 HTML)
+- **WET**: 转换为纯文本 (有损过程)
 
-**HTML 鈫?鏂囨湰杞崲鍣?*鐨勫樊寮?
+**HTML → 文本转换器**的差异:
 
-![DCLM: HTML 杞崲鍣ㄥ鍑嗙‘鐜囩殑褰卞搷](images/l13-dclm-wet.png)
+![DCLM: HTML 转换器对准确率的影响](images/dclm-wet.png)
 
-浣跨敤 **trafilatura**姣斾娇鐢?WET 鏂囦欢楂?*4 涓櫨鍒嗙偣**!
+使用 **trafilatura**比使用 WET 文件高**4 个百分点**!
 
-> **娉ㄦ剰**: Common Crawl**涓嶆槸瀹屾暣鐨勪簰鑱旂綉**! 瀹冨埢鎰忎繚瀹堝拰绀艰矊. 鐢氳嚦涓嶆槸鎵€鏈?Wikipedia 鏂囩珷閮藉湪 Common Crawl 涓?
+> **注意**: Common Crawl**不是完整的互联网**! 它刻意保守和礼貌. 甚至不是所有 Wikipedia 文章都在 Common Crawl 中.
 
-### 2.4 CCNet (2019): 鐢?Wikipedia 杩囨护 Common Crawl
+### 2.4 CCNet (2019): 用 Wikipedia 过滤 Common Crawl
 
-**鐩爣**: 鑷姩鏋勫缓澶ц妯￠珮璐ㄩ噺澶氳瑷€鏁版嵁闆?
+**目标**: 自动构建大规模高质量多语言数据集
 
-**娴佺▼**:
+**流程**:
 
-1. **鍘婚噸**: 鍩轰簬杞婚噺绾ц鑼冨寲绉婚櫎閲嶅娈佃惤
-2. **璇█璇嗗埆**: fastText 鍒嗙被鍣? 鍙繚鐣欑洰鏍囪瑷€
-3. **璐ㄩ噺杩囨护**: 淇濈暀鍦?*KenLM 5-gram 妯″瀷**涓嬬湅璧锋潵鍍?Wikipedia 鐨勬枃妗?
+1. **去重**: 基于轻量级规范化移除重复段落
+2. **语言识别**: fastText 分类器, 只保留目标语言
+3. **质量过滤**: 保留在**KenLM 5-gram 模型**下看起来像 Wikipedia 的文档
 
-**鍏抽敭娲炲療**: Wikipedia 浣滀负"楂樿川閲?鐨勪唬鐞? 浣?Wikipedia 涓嶈鐩栨墍鏈夊唴瀹? 杩欎釜鏂规硶涔熶笉浼?
+**关键洞察**: Wikipedia 作为"高质量"的代理. 但 Wikipedia 不覆盖所有内容, 这个方法也不会.
 
-### 2.5 T5 / C4 (2019): 瑙勫垯杩囨护
+### 2.5 T5 / C4 (2019): 规则过滤
 
 **C4 (Colossal Clean Crawled Corpus)**:
 
-- 浠庝竴涓?Common Crawl 蹇収 (2019 骞?4 鏈? 寮€濮? 1.4T tokens
-- **绾鍒欒繃婊?* (鏃犳ā鍨?:
-  - 淇濈暀浠ユ爣鐐圭粨灏俱€佲墺5 璇嶇殑琛?
-  - 绉婚櫎 < 3 鍙ョ殑椤甸潰
-  - 绉婚櫎鍖呭惈"鍧忚瘝"鐨勯〉闈?
-  - 绉婚櫎鍖呭惈 `{` 鐨勯〉闈?(绉婚櫎浠ｇ爜!)
-  - 鍙繚鐣欒嫳璇?(姒傜巼 鈮?0.99)
-- 缁撴灉: 806 GB (156B tokens)
+- 从一个 Common Crawl 快照 (2019 年 4 月) 开始: 1.4T tokens
+- **纯规则过滤** (无模型):
+  - 保留以标点结尾、≥5 词的行
+  - 移除 < 3 句的页面
+  - 移除包含"坏词"的页面
+  - 移除包含 `{` 的页面 (移除代码!)
+  - 只保留英语 (概率 ≥ 0.99)
+- 结果: 806 GB (156B tokens)
 
-**瑙勫垯 vs 妯″瀷杩囨护鐨勬潈琛?*:
+**规则 vs 模型过滤的权衡**:
 
-- **瑙勫垯**: 鏇村箍娉?(闈?Wikipedia 椋庢牸鐨勫ソ鍙ュ瓙涔熻兘淇濈暀), 浣嗗彲鑳藉寘鍚瀮鍦?
-- **妯″瀷**: 鏇寸簿鍑? 浣嗗彧鑳藉鍒?姝ｄ緥"鐨勫垎甯?
+- **规则**: 更广泛 (非 Wikipedia 风格的好句子也能保留), 但可能包含垃圾
+- **模型**: 更精准, 但只能复制"正例"的分布
 
-### 2.6 GPT-3 (2020): 澶氭簮娣峰悎
+### 2.6 GPT-3 (2020): 多源混合
 
-- Common Crawl (澶勭悊鍚?
-- WebText2 (WebText 鐨勬墿灞?
-- 绁炵鐨勪功绫嶈鏂欏簱 (Books1, Books2)
+- Common Crawl (处理后)
+- WebText2 (WebText 的扩展)
+- 神秘的书籍语料库 (Books1, Books2)
 - Wikipedia
-- **鎬昏**: 400B tokens
+- **总计**: 400B tokens
 
-**Common Crawl 澶勭悊**: 璁粌璐ㄩ噺鍒嗙被鍣? 鍖哄垎 {WebText, Wikipedia, Books} 涓庡叾浣?
+**Common Crawl 处理**: 训练质量分类器, 区分 {WebText, Wikipedia, Books} 与其余.
 
-### 2.7 The Pile (2021): 绀惧尯椹卞姩
+### 2.7 The Pile (2021): 社区驱动
 
-涓轰簡瀵规姉 GPT-3 鐨勫皝闂? EleutherAI 绀惧尯鍦?Discord 涓婂崗璋? 浼楀寘鏋勫缓浜?**22 涓珮璐ㄩ噺棰嗗煙**:
+为了对抗 GPT-3 的封闭, EleutherAI 社区在 Discord 上协调, 众包构建了 **22 个高质量领域**:
 
-- Pile-CC (Common Crawl, 浣跨敤 WARC + jusText)
+- Pile-CC (Common Crawl, 使用 WARC + jusText)
 - OpenWebText
 - Wikipedia, arXiv
-- **PubMed Central**: 500 涓囩瘒璁烘枃 (NIH 璧勫姪鐨勫繀椤诲叕寮€)
-- **Enron Emails**: 50 涓囧皝閭欢 (鏉ヨ嚜 2002 骞磋皟鏌? 鍥犱负**鍑犱箮娌℃湁鍏朵粬鍏紑閭欢鏁版嵁闆?*)
-- **Project Gutenberg**: 7.5 涓囨湰鍏増涔?
-- **Books3**: 19.6 涓囨湰涔?(鏉ヨ嚜褰卞瓙搴? 鍥犵増鏉冮棶棰樺凡涓嬫灦)
-- **Stack Exchange**: QA 椋庢牸, 鎺ヨ繎鎸囦护閬靛惊
-- **GitHub**: 浠ｇ爜
+- **PubMed Central**: 500 万篇论文 (NIH 资助的必须公开)
+- **Enron Emails**: 50 万封邮件 (来自 2002 年调查, 因为**几乎没有其他公开邮件数据集**)
+- **Project Gutenberg**: 7.5 万本公版书
+- **Books3**: 19.6 万本书 (来自影子库, 因版权问题已下架)
+- **Stack Exchange**: QA 风格, 接近指令遵循
+- **GitHub**: 代码
 
-**缁撴灉**: 825 GB (~275B tokens)
+**结果**: 825 GB (~275B tokens)
 
-### 2.8 MassiveText / Gopher (2021): 瑙勫垯涓诲
+### 2.8 MassiveText / Gopher (2021): 规则主导
 
-**MassiveWeb** 杩囨护:
+**MassiveWeb** 过滤:
 
-- 鍙繚鐣欒嫳璇?
-- **鎵嬪姩瑙勫垯**杩囨护 (濡? 80% 鐨勮瘝鑷冲皯鍖呭惈涓€涓瓧姣嶅瓧绗?
-- **Google SafeSearch** 杩囨护姣掓€?(闈炶瘝琛?
+- 只保留英语
+- **手动规则**过滤 (如: 80% 的词至少包含一个字母字符)
+- **Google SafeSearch** 过滤毒性 (非词表)
 
-> **褰撴椂鐨勭悊鐢?*: 閬垮厤寮辨ā鍨嬬殑鍋忚. 浣嗚繖涓寖寮忓悗鏉ヨ DCLM 鎵撶牬.
+> **当时的理由**: 避免弱模型的偏见. 但这个范式后来被 DCLM 打破.
 
-**缁撴灉**: 10.5 TB 鏂囨湰, 浣?Gopher 鍙缁冧簡 300B tokens (12%)
+**结果**: 10.5 TB 文本, 但 Gopher 只训练了 300B tokens (12%)
 
-### 2.9 LLaMA (2022): 缁煎悎鏂规
+### 2.9 LLaMA (2022): 综合方案
 
-- Common Crawl + CCNet (鍒嗙被鍣? 鏄惁琚?Wikipedia **寮曠敤**)
+- Common Crawl + CCNet (分类器: 是否被 Wikipedia **引用**)
 - C4
-- GitHub (淇濈暀瀹芥澗璁稿彲)
-- Wikipedia, Project Gutenberg, **Books3** (鎯逛笂澶ч夯鐑?)
+- GitHub (保留宽松许可)
+- Wikipedia, Project Gutenberg, **Books3** (惹上大麻烦!)
 - arXiv, Stack Exchange
-- **鎬昏**: 1.2T tokens
+- **总计**: 1.2T tokens
 
-**澶嶅埗鐗堟湰**:
+**复制版本**:
 
-- **RedPajama v1** (Together): 寮€婧愬鍒?
-- **SlimPajama** (Cerebras): 鍘婚噸鍚庣殑 627B 瀛愰泦
+- **RedPajama v1** (Together): 开源复制
+- **SlimPajama** (Cerebras): 去重后的 627B 子集
 
 ### 2.10 RefinedWeb (2023): Web Data is All You Need
 
-**璁虹偣**: 濡傛灉杩囨护鍋氬緱濂?**鍙渶瑕佺綉缁滄暟鎹?*.
+**论点**: 如果过滤做得好,**只需要网络数据**.
 
-**鏂规硶**:
+**方法**:
 
-- trafilatura 鎻愬彇 (WARC 鑰岄潪 WET)
-- Gopher 瑙勫垯杩囨护, **閬垮厤 ML 杩囨护**浠ラ伩鍏嶅亸瑙?
-- MinHash 妯＄硦鍘婚噸
-- **缁撴灉**: 5T tokens (鍙戝竷 600B)
+- trafilatura 提取 (WARC 而非 WET)
+- Gopher 规则过滤, **避免 ML 过滤**以避免偏见
+- MinHash 模糊去重
+- **结果**: 5T tokens (发布 600B)
 
-**FineWeb** (HuggingFace): RefinedWeb 鐨勬敼杩涚増
+**FineWeb** (HuggingFace): RefinedWeb 的改进版
 
-- 95 涓?Common Crawl 蹇収
-- Gopher + C4 瑙勫垯
-- PII 鍖垮悕鍖?
-- **缁撴灉**: 15T tokens (浠嶆槸**杞诲害杩囨护**, 閫傚悎杩涗竴姝ユā鍨嬭繃婊?
+- 95 个 Common Crawl 快照
+- Gopher + C4 规则
+- PII 匿名化
+- **结果**: 15T tokens (仍是**轻度过滤**, 适合进一步模型过滤)
 
-### 2.11 Dolma (2024): AI2 鐨勭患鍚堟暟鎹泦
+### 2.11 Dolma (2024): AI2 的综合数据集
 
-- Common Crawl (璇█璇嗗埆 + 瑙勫垯杩囨护 + 鍘婚噸)
-- Reddit (Pushshift 椤圭洰)
-- PeS2o: 4000 涓囩瘒瀛︽湳璁烘枃 (Semantic Scholar)
+- Common Crawl (语言识别 + 规则过滤 + 去重)
+- Reddit (Pushshift 项目)
+- PeS2o: 4000 万篇学术论文 (Semantic Scholar)
 - C4, Project Gutenberg, Wikipedia
-- **缁撴灉**: 3T tokens
+- **结果**: 3T tokens
 
-### 2.12 DCLM (2024): 妯″瀷杩囨护鐨勮儨鍒?
+### 2.12 DCLM (2024): 模型过滤的胜利
 
-**[娣卞叆鎺㈣: DCLM 涓庢ā鍨嬪熀璐ㄩ噺杩囨护](./Lecture13-DCLM.md)**
+**[深入探讨: DCLM 与模型基质量过滤](./Lecture13-DCLM.md)**
 
-**DataComp-LM**鐨勭洰鏍囨槸鍒涘缓涓€涓?*鏁版嵁澶勭悊绠楁硶鐨勬爣鍑嗙珵璧?*.
+**DataComp-LM**的目标是创建一个**数据处理算法的标准竞赛**.
 
-**DCLM-pool**: 澶勭悊鎵€鏈?Common Crawl 鈫?*240T tokens**
+**DCLM-pool**: 处理所有 Common Crawl →**240T tokens**
 
-**DCLM-baseline**: 浣跨敤璐ㄩ噺鍒嗙被鍣ㄨ繃婊?鈫?*3.8T tokens** (鍙繚鐣?1.4%!)
+**DCLM-baseline**: 使用质量分类器过滤 →**3.8T tokens** (只保留 1.4%!)
 
-![DCLM 杩囨护娴佺▼](images/l13-dclm-filter.png)
+![DCLM 过滤流程](images/dclm-filter.png)
 
-**妯″瀷杩囨护鏂规硶**:
+**模型过滤方法**:
 
-- **姝ｄ緥** (20 涓?: OpenHermes-2.5 (GPT-4 鐢熸垚鐨勬寚浠ゆ暟鎹? + ELI5 (Reddit 瀛愮増鍧?
-- **璐熶緥** (20 涓?: RefinedWeb 闅忔満鏍锋湰
-- 璁粌 **fastText 鍒嗙被鍣?*
+- **正例** (20 万): OpenHermes-2.5 (GPT-4 生成的指令数据) + ELI5 (Reddit 子版块)
+- **负例** (20 万): RefinedWeb 随机样本
+- 训练 **fastText 分类器**
 
-![DCLM 璐ㄩ噺鍒嗙被鍣ㄦ晥鏋淽(images/l13-dclm-quality.png)
+![DCLM 质量分类器效果](images/dclm-quality.png)
 
-> **鍏抽敭杞姌**: 杩欐墦鐮翠簡"閬垮厤 ML 杩囨护"鐨勬棫鑼冨紡. 浣跨敤妯″瀷杩囨护**鏄捐憲鎻愬崌**涓嬫父浠诲姟琛ㄧ幇.
+> **关键转折**: 这打破了"避免 ML 过滤"的旧范式. 使用模型过滤**显著提升**下游任务表现.
 
-### 2.13 Nemotron-CC (2024): 鏇村 Token
+### 2.13 Nemotron-CC (2024): 更多 Token
 
-**闂**: DCLM 杩囨护澶縺杩?(240T 鈫?3.8T). 鎯宠鏇村 Token!
+**问题**: DCLM 过滤太激进 (240T → 3.8T). 想要更多 Token!
 
-**鏂规硶**:
+**方法**:
 
-1. **HTML 鈫?鏂囨湰**: 浣跨敤 jusText (鑰岄潪 trafilatura), 鍥犱负淇濈暀鏇村 Token
-2. **鍒嗙被鍣ㄩ泦鎴?*:
-   - Nemotron-340B 璇勫垎鏁欒偛浠峰€? 钂搁鍒板揩閫熸ā鍨?
-   - DCLM 鍒嗙被鍣?
-   - 鎸夊垎鏁板垎妗? 浠庢瘡涓《閲囨牱 (淇濊瘉瑕嗙洊)
-3. **鍚堟垚鏁版嵁鏀瑰啓**:
-   - 浣庤川閲忔暟鎹? 鐢?LM 鏀瑰啓鎴愰珮璐ㄩ噺
-   - 楂樿川閲忔暟鎹? 鐢?LM 鐢熸垚 QA 瀵?/ 鎽樿 / 鍏抽敭淇℃伅鎻愬彇
+1. **HTML → 文本**: 使用 jusText (而非 trafilatura), 因为保留更多 Token
+2. **分类器集成**:
+   - Nemotron-340B 评分教育价值, 蒸馏到快速模型
+   - DCLM 分类器
+   - 按分数分桶, 从每个桶采样 (保证覆盖)
+3. **合成数据改写**:
+   - 低质量数据: 用 LM 改写成高质量
+   - 高质量数据: 用 LM 生成 QA 对 / 摘要 / 关键信息提取
 
-**缁撴灉**: 6.3T tokens (楂樿川閲忓瓙闆?1.1T)
+**结果**: 6.3T tokens (高质量子集 1.1T)
 
-![Nemotron-CC 鏁堟灉](images/l13-nemotron-results.png)
+![Nemotron-CC 效果](images/nemotron-results.png)
 
-> **瀵规瘮**: Llama 3 璁粌 15T, Qwen 3 璁粌 36T (鍚妯℃€?.
-
----
-
-## 3. 鐗堟潈娉曚笌鏁版嵁鍚堟硶鎬?
-
-**[娣卞叆鎺㈣: 鐗堟潈娉曚笌 Fair Use](./Lecture13-Copyright.md)**
-
-### 3.1 鐗堟潈娉曞熀纭€
-
-- **鐩殑**: 婵€鍔辩煡璇嗕骇鍝佺殑鍒涢€?
-- **鑼冨洿**: "鍥哄畾鍦ㄤ换浣曟湁褰㈣〃杈惧獟浠嬩腑鐨勫師鍒涗綔鍝?
-- **鏃犻渶娉ㄥ唽**: 浣犵殑缃戠珯宸茬粡鏄増鏉冧綔鍝?(鍙槸璧疯瘔鍓嶉渶瑕佹敞鍐? $65)
-- **鏈熼檺**: 75 骞村悗杩涘叆鍏増
-
-> **鍏抽敭**: 浜掕仈缃戜笂鐨?*澶у鏁板唴瀹归兘鏄増鏉冧綔鍝?*.
-
-### 3.2 濡備綍鍚堟硶浣跨敤鐗堟潈浣滃搧
-
-**鏂瑰紡涓€: 鑾峰緱璁稿彲 (License)**
-
-- 绛捐鍚堝悓 (濡?Google-Reddit, OpenAI-Shutterstock)
-- Creative Commons 璁稿彲 (濡?Wikipedia, Khan Academy)
-
-**鏂瑰紡浜? 鎻村紩 Fair Use**
-
-鍥涗釜鍥犵礌:
-
-1. **浣跨敤鐩殑**: 鏁欒偛 > 鍟嗕笟, 鍙橀潻鎬?> 澶嶅埗鎬?
-2. **浣滃搧鎬ц川**: 浜嬪疄鎬?> 铏氭瀯鎬?
-3. **浣跨敤閲?*: 鐗囨 > 鍏ㄩ儴
-4. **甯傚満褰卞搷**: 涓嶆浛浠ｅ師浣滃搧
-
-**LLM 璁粌鐨勬寫鎴?*:
-
-- 澶嶅埗鏁版嵁 (璁粌绗竴姝? 鏈韩**鍙兘宸茶繚瑙?*, 鍗充娇浣犱粈涔堥兘涓嶅仛
-- 鍙互璁鸿瘉 ML 璁粌鏄?*鍙橀潻鎬?*鐨?
-- ML 绯荤粺鍏冲績鐨勬槸**鎯虫硶**(濡傚仠杞︽爣蹇?, 鑰岄潪**琛ㄨ揪** (鏌愬紶鍥剧殑鑹烘湳閫夋嫨)
-- **浣?*: LLM 鏄庢樉褰卞搷甯傚満 (浣滃銆佽壓鏈)
-
-### 3.3 鏈嶅姟鏉℃ (Terms of Service)
-
-鍗充娇鏈夎鍙垨 Fair Use, **鏈嶅姟鏉℃鍙兘鏂藉姞棰濆闄愬埗**.
-
-渚? YouTube 鐨勬湇鍔℃潯娆剧姝笅杞借棰? 鍗充娇瑙嗛鏈韩鏄?Creative Commons.
+> **对比**: Llama 3 训练 15T, Qwen 3 训练 36T (含多模态).
 
 ---
 
-## 4. 涓湡璁粌涓庡悗鏈熻缁?
+## 3. 版权法与数据合法性
 
-### 4.1 闀夸笂涓嬫枃鎵╁睍 (Long Context)
+**[深入探讨: 版权法与 Fair Use](./Lecture13-Copyright.md)**
 
-**闇€姹?*:
+### 3.1 版权法基础
+
+- **目的**: 激励知识产品的创造
+- **范围**: "固定在任何有形表达媒介中的原创作品"
+- **无需注册**: 你的网站已经是版权作品 (只是起诉前需要注册, $65)
+- **期限**: 75 年后进入公版
+
+> **关键**: 互联网上的**大多数内容都是版权作品**.
+
+### 3.2 如何合法使用版权作品
+
+**方式一: 获得许可 (License)**
+
+- 签订合同 (如 Google-Reddit, OpenAI-Shutterstock)
+- Creative Commons 许可 (如 Wikipedia, Khan Academy)
+
+**方式二: 援引 Fair Use**
+
+四个因素:
+
+1. **使用目的**: 教育 > 商业, 变革性 > 复制性
+2. **作品性质**: 事实性 > 虚构性
+3. **使用量**: 片段 > 全部
+4. **市场影响**: 不替代原作品
+
+**LLM 训练的挑战**:
+
+- 复制数据 (训练第一步) 本身**可能已违规**, 即使你什么都不做
+- 可以论证 ML 训练是**变革性**的
+- ML 系统关心的是**想法**(如停车标志), 而非**表达** (某张图的艺术选择)
+- **但**: LLM 明显影响市场 (作家、艺术家)
+
+### 3.3 服务条款 (Terms of Service)
+
+即使有许可或 Fair Use, **服务条款可能施加额外限制**.
+
+例: YouTube 的服务条款禁止下载视频, 即使视频本身是 Creative Commons.
+
+---
+
+## 4. 中期训练与后期训练
+
+### 4.1 长上下文扩展 (Long Context)
+
+**需求**:
 
 - DeepSeek v3: 128K tokens
 - Claude 3.5: 200K tokens
 - Gemini 1.5 Pro: 1.5M tokens
 
-**闂**: Transformer 涓庡簭鍒楅暱搴﹀憟**浜屾鏂?*鍏崇郴, 棰勮缁冮樁娈典笉楂樻晥.
+**问题**: Transformer 与序列长度呈**二次方**关系, 预训练阶段不高效.
 
-**瑙ｅ喅**: 鍦?Mid-training 闃舵娣诲姞闀夸笂涓嬫枃鑳藉姏
+**解决**: 在 Mid-training 阶段添加长上下文能力
 
-- **鏁版嵁鏉ユ簮**: 涔︾睄 (PG-19), 鏁板璇佹槑 (Proof-Pile)
-- **鎶€鏈?*: Shifted sparse attention, Positional interpolation
+- **数据来源**: 书籍 (PG-19), 数学证明 (Proof-Pile)
+- **技术**: Shifted sparse attention, Positional interpolation
 
-### 4.2 浠诲姟/NLP 鏁版嵁闆?
+### 4.2 任务/NLP 数据集
 
-**鎬濊矾**: 灏嗕紶缁?NLP 鏁版嵁闆嗚浆鎹负 Prompt 鏍煎紡
+**思路**: 将传统 NLP 数据集转换为 Prompt 格式
 
 **Super-Natural Instructions (2022)**:
 
-- 1,600+ 浠诲姟, 绀惧尯璐＄尞
-- 寰皟 T5 鈫?Tk-Instruct
+- 1,600+ 任务, 社区贡献
+- 微调 T5 → Tk-Instruct
 
 **Flan (2022-2023)**:
 
-- 1,800+ 浠诲姟
-- Zero-shot, Few-shot, Chain-of-Thought 鐗堟湰
+- 1,800+ 任务
+- Zero-shot, Few-shot, Chain-of-Thought 版本
 
-> **闂**: Prompt 澶ā鏉垮寲, 涓嶅鑷劧.
+> **问题**: Prompt 太模板化, 不够自然.
 
-### 4.3 鎸囦护閬靛惊涓庡璇濇暟鎹?
+### 4.3 指令遵循与对话数据
 
 **Alpaca (2023)**:
 
-- 浣跨敤 **Self-Instruct** 浠?text-davinci-003 鐢熸垚 52K 绀轰緥
-- 寰皟 LLaMA 7B
+- 使用 **Self-Instruct** 从 text-davinci-003 生成 52K 示例
+- 微调 LLaMA 7B
 
 **Vicuna**:
 
-- 浣跨敤 ShareGPT (鐢ㄦ埛鍒嗕韩鐨?ChatGPT 瀵硅瘽, 宸插簾寮? 鐨?70K 瀵硅瘽
-- 寰皟 LLaMA
+- 使用 ShareGPT (用户分享的 ChatGPT 对话, 已废弃) 的 70K 对话
+- 微调 LLaMA
 
 **Baize**:
 
-- GPT-3.5 鑷垜瀵硅瘽 (浠?Quora/StackOverflow 闂涓虹瀛?
-- 111.5K 绀轰緥
+- GPT-3.5 自我对话 (以 Quora/StackOverflow 问题为种子)
+- 111.5K 示例
 
 **WizardLM**:
 
-- **Evol-Instruct**: 璁╅棶棰?杩涘寲"浠ュ鍔犻毦搴?骞垮害
+- **Evol-Instruct**: 让问题"进化"以增加难度/广度
 
 **MAmmoTH2**:
 
-- 浠?Common Crawl 涓敤 fastText 璇嗗埆"娴嬮獙缃戠珯"
-- 鐢?GPT-4/Mixtral 鎻愬彇 QA 瀵?
-- 10M 鎸囦护
+- 从 Common Crawl 中用 fastText 识别"测验网站"
+- 用 GPT-4/Mixtral 提取 QA 对
+- 10M 指令
 
 **OpenHermes 2.5**:
 
-- 澶氫釜鏁版嵁闆嗙殑鑱氬悎
-- 1M GPT-4 鐢熸垚鐨勭ず渚?
+- 多个数据集的聚合
+- 1M GPT-4 生成的示例
 
 **Llama 2 Chat**:
 
-- 27,540 鏉?*浜哄伐鏍囨敞**鐨勯珮璐ㄩ噺鎸囦护
-- 澹扮О浼樹簬浣跨敤鏁扮櫨涓囧紑婧愮ず渚?
+- 27,540 条**人工标注**的高质量指令
+- 声称优于使用数百万开源示例
 
 **Llama-Nemotron Post-training (2024)**:
 
-- 浠庡叕寮€鏁版嵁闆?(WildChat 绛? 鎴栧悎鎴愮敓鎴?Prompt
-- 浣跨敤 Llama, Mixtral, DeepSeek R1, Qwen 鐢熸垚鍥炲 (鍟嗕笟鍙敤, 涓嶅儚 GPT-4)
-- 鍖呭惈鎺ㄧ悊杞ㄨ抗
+- 从公开数据集 (WildChat 等) 或合成生成 Prompt
+- 使用 Llama, Mixtral, DeepSeek R1, Qwen 生成回复 (商业可用, 不像 GPT-4)
+- 包含推理轨迹
 
 ---
 
-## 5. 鎬荤粨: 鏍稿績瑕佺偣
+## 5. 总结: 核心要点
 
-1. **鏁版嵁涓嶄細浠庡ぉ涓婃帀涓嬫潵**: 闇€瑕佸ぇ閲忓伐浣滆幏鍙?
+1. **数据不会从天上掉下来**: 需要大量工作获取
 
-   - **Live Service 鈫?Raw Dump 鈫?Processed Data**
-   - 娑夊強杞崲銆佽繃婊ゃ€佸幓閲?
-2. **鏁版嵁鏄尯鍒嗚瑷€妯″瀷鐨勫叧閿?*: 鏋舵瀯宸茶秼鍚? 鏁版嵁鍐冲畾璐ㄩ噺
-3. **娉曞緥鍜屼鸡鐞嗛棶棰?*: 鐗堟潈銆侀殣绉併€佹湇鍔℃潯娆?
-4. **鐩墠涓€鍒囬兘鏄惎鍙戝紡鐨?*: 澶ч噺鏈轰細鏀硅繘!
+   - **Live Service → Raw Dump → Processed Data**
+   - 涉及转换、过滤、去重
+2. **数据是区分语言模型的关键**: 架构已趋同, 数据决定质量
+3. **法律和伦理问题**: 版权、隐私、服务条款
+4. **目前一切都是启发式的**: 大量机会改进!
 
 ---
 
-## 闄勫綍: 閰嶅浠ｇ爜缁撴瀯 (`lecture_13.py`)
+## 附录: 配套代码结构 (`lecture_13.py`)
 
-璇剧▼浠ｇ爜瀹氫箟浜嗗畬鏁寸殑璁插骇缁撴瀯:
+课程代码定义了完整的讲座结构:
 
 ```python
 def main():
-    introduction()              # 鏁版嵁鏈€閲嶈
+    introduction()              # 数据最重要
     # Pre-training
     bert()                      # Wikipedia + Books (2019)
-    gpt2_webtext()              # Reddit 閾炬帴 (2019)
-    common_crawl()              # 缃戠粶鐖櫕
-    ccnet()                     # Wikipedia 杩囨护 (2019)
-    t5_c4()                     # 瑙勫垯杩囨护 (2019)
-    gpt3()                      # 澶氭簮娣峰悎 (2020)
-    the_pile()                  # 绀惧尯浼楀寘 (2021)
-    gopher_massivetext()        # 瑙勫垯杩囨护 (2021)
-    llama()                     # 缁煎悎鏂规 (2022)
+    gpt2_webtext()              # Reddit 链接 (2019)
+    common_crawl()              # 网络爬虫
+    ccnet()                     # Wikipedia 过滤 (2019)
+    t5_c4()                     # 规则过滤 (2019)
+    gpt3()                      # 多源混合 (2020)
+    the_pile()                  # 社区众包 (2021)
+    gopher_massivetext()        # 规则过滤 (2021)
+    llama()                     # 综合方案 (2022)
     refinedweb()                # Web Only (2023)
-    dolma()                     # AI2 缁煎悎 (2024)
-    dclm()                      # 妯″瀷杩囨护 (2024)
-    nemotron_cc()               # 鏇村 Token (2024)
-    copyright()                 # 鐗堟潈娉?
+    dolma()                     # AI2 综合 (2024)
+    dclm()                      # 模型过滤 (2024)
+    nemotron_cc()               # 更多 Token (2024)
+    copyright()                 # 版权法
     # Mid/Post-training
-    long_context()              # 闀夸笂涓嬫枃
-    tasks()                     # NLP 浠诲姟杞崲
-    instruction_chat()          # 鎸囦护/瀵硅瘽鏁版嵁
+    long_context()              # 长上下文
+    tasks()                     # NLP 任务转换
+    instruction_chat()          # 指令/对话数据
 ```
 
 ---
 
-## 鍙傝€冮摼鎺?
+## 参考链接
 
 - **Common Crawl**: https://commoncrawl.org/
 - **DCLM**: https://arxiv.org/abs/2406.11794
 - **FineWeb**: https://huggingface.co/datasets/HuggingFaceFW/fineweb
 - **The Pile**: https://arxiv.org/abs/2101.00027
-- **Nemotron-CC**: https://arxiv.org/abs/2412.xxxxx (寰呯‘璁?
-- **CS324 鐗堟潈绗旇**: https://stanford-cs324.github.io/winter2022/lectures/legality/
-
+- **Nemotron-CC**: https://arxiv.org/abs/2412.xxxxx (待确认)
+- **CS324 版权笔记**: https://stanford-cs324.github.io/winter2022/lectures/legality/

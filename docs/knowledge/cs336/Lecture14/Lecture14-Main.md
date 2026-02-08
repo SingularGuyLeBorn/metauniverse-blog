@@ -1,60 +1,60 @@
-﻿# CS336 Lecture 14: 瀹炴垬鏁版嵁杩囨护鍜屽幓閲?(Practical Data Filtering and Deduplication)
+# CS336 Lecture 14: 实战数据过滤和去重 (Practical Data Filtering and Deduplication)
 
-> **缂栬緫钃濆浘 (Editorial Blueprint)**
+> **编辑蓝图 (Editorial Blueprint)**
 > 
-> **鏍稿績涓婚**: 鏈搴ф槸CS336璇剧▼涓渶鍏峰疄璺垫€х殑涓€璁诧紝娣卞叆璁茶В浜嗗ぇ瑙勬ā璇█妯″瀷棰勮缁冩暟鎹鐞嗘祦姘寸嚎鐨勪袱澶ф牳蹇冿細**鏁版嵁杩囨护 (Filtering)**鍜?*鏁版嵁鍘婚噸 (Deduplication)**銆備粠绠楁硶鍘熺悊鍒板伐绋嬪疄鐜帮紝浠庤瑷€璇嗗埆鍒版瘨鎬ц繃婊わ紝鍏ㄩ潰瑕嗙洊銆?
+> **核心主题**: 本讲座是CS336课程中最具实践性的一讲，深入讲解了大规模语言模型预训练数据处理流水线的两大核心：**数据过滤 (Filtering)**和**数据去重 (Deduplication)**。从算法原理到工程实现，从语言识别到毒性过滤，全面覆盖。
 > 
-> **鐭ヨ瘑缁撴瀯**: 
-> - 绗竴閮ㄥ垎锛氳繃婊ょ畻娉曞熀纭€锛圢-gram璇█妯″瀷銆並enLM銆乫astText鍒嗙被鍣ㄣ€侀噸瑕佹€ч噸閲囨牱DSIR锛?
-> - 绗簩閮ㄥ垎锛氳繃婊ゅ簲鐢ㄥ満鏅紙璇█璇嗗埆銆佽川閲忚繃婊ゃ€佹瘨鎬ц繃婊わ級
-> - 绗笁閮ㄥ垎锛氬幓閲嶆妧鏈紙绮剧‘鍘婚噸銆佸竷闅嗚繃婊ゅ櫒銆佽繎浼煎幓閲嶃€丮inHash銆丩SH锛?
+> **知识结构**: 
+> - 第一部分：过滤算法基础（N-gram语言模型、KenLM、fastText分类器、重要性重采样DSIR）
+> - 第二部分：过滤应用场景（语言识别、质量过滤、毒性过滤）
+> - 第三部分：去重技术（精确去重、布隆过滤器、近似去重、MinHash、LSH）
 > 
-> **绮捐嫳琛ュ厖绗旇**:
-> - **[娣卞叆鎺㈣: KenLM涓嶯-gram璇█妯″瀷](./Lecture14-KenLM.md)** - N-gram鍥為€€鏈哄埗銆並neser-Ney骞虫粦
-> - **[娣卞叆鎺㈣: MinHash涓嶭SH绠楁硶](./Lecture14-MinHash-LSH.md)** - 杩戜技鍘婚噸鐨勬暟瀛﹀師鐞嗕笌瀹炵幇
+> **精英补充笔记**:
+> - **[深入探讨: KenLM与N-gram语言模型](./Lecture14-KenLM.md)** - N-gram回退机制、Kneser-Ney平滑
+> - **[深入探讨: MinHash与LSH算法](./Lecture14-MinHash-LSH.md)** - 近似去重的数学原理与实现
 
 ---
 
-## 涓€銆佽繃婊ょ畻娉曞熀纭€ (Filtering Algorithms Fundamentals)
+## 一、过滤算法基础 (Filtering Algorithms Fundamentals)
 
-### 1.1 涓轰粈涔堥渶瑕佽繃婊わ紵
+### 1.1 为什么需要过滤？
 
-棰勮缁冩暟鎹殑璐ㄩ噺鐩存帴鍐冲畾妯″瀷鎬ц兘銆備簰鑱旂綉鏁版嵁锛堝Common Crawl锛夊寘鍚ぇ閲忥細
-- **浣庤川閲忓唴瀹?*: 鍨冨溇閭欢銆佸箍鍛婃枃鏈€侀噸澶嶆ā鏉?
-- **闈炵洰鏍囪瑷€**: 澶氳瑷€娣锋潅
-- **鏈夊鍐呭**: 姣掓€ф枃鏈€佽繚娉曚俊鎭?
+预训练数据的质量直接决定模型性能。互联网数据（如Common Crawl）包含大量：
+- **低质量内容**: 垃圾邮件、广告文本、重复模板
+- **非目标语言**: 多语言混杂
+- **有害内容**: 毒性文本、违法信息
 
-杩囨护鐨勭洰鏍囨槸锛?*浠庢捣閲忓櫔澹版暟鎹腑楂樻晥绛涢€夊嚭楂樿川閲忋€佺洰鏍囪瑷€銆佸畨鍏ㄧ殑鏂囨湰**銆?
+过滤的目标是：**从海量噪声数据中高效筛选出高质量、目标语言、安全的文本**。
 
-### 1.2 N-gram 璇█妯″瀷 (N-gram Language Models)
+### 1.2 N-gram 语言模型 (N-gram Language Models)
 
-N-gram妯″瀷鏄繃婊ゆ祦姘寸嚎鐨勫熀纭€宸ュ叿锛岀敤浜庤瘎浼版枃鏈川閲忋€?
+N-gram模型是过滤流水线的基础工具，用于评估文本质量。
 
-#### 鏍稿績鎬濇兂
+#### 核心思想
 
-缁欏畾涓€涓猼oken搴忓垪 $x_1, x_2, ..., x_n$锛孨-gram妯″瀷灏嗗叾姒傜巼鍒嗚В涓猴細
+给定一个token序列 $x_1, x_2, ..., x_n$，N-gram模型将其概率分解为：
 
 $$P(x_1, ..., x_n) = \prod_{i=1}^{n} P(x_i | x_{i-n+1}, ..., x_{i-1})$$
 
-- **Unigram (n=1)**: $P(x_i)$ - 鍙湅褰撳墠璇?
-- **Bigram (n=2)**: $P(x_i | x_{i-1})$ - 鐪嬪墠涓€涓瘝
-- **Trigram (n=3)**: $P(x_i | x_{i-2}, x_{i-1})$ - 鐪嬪墠涓や釜璇?
+- **Unigram (n=1)**: $P(x_i)$ - 只看当前词
+- **Bigram (n=2)**: $P(x_i | x_{i-1})$ - 看前一个词
+- **Trigram (n=3)**: $P(x_i | x_{i-2}, x_{i-1})$ - 看前两个词
 
-#### Python瀹炵幇锛欱igram妯″瀷
+#### Python实现：Bigram模型
 
 ```python
 from collections import defaultdict
 import math
 
 class BigramModel:
-    """绠€鍗曠殑Bigram璇█妯″瀷"""
+    """简单的Bigram语言模型"""
     def __init__(self):
         self.bigram_counts = defaultdict(lambda: defaultdict(int))
         self.unigram_counts = defaultdict(int)
         self.total_count = 0
     
     def train(self, texts: list[str]):
-        """鍦ㄨ鏂欏簱涓婅缁冩ā鍨?""
+        """在语料库上训练模型"""
         for text in texts:
             tokens = text.split()
             for i, token in enumerate(tokens):
@@ -65,16 +65,16 @@ class BigramModel:
                     self.bigram_counts[prev_token][token] += 1
     
     def log_prob(self, text: str) -> float:
-        """璁＄畻鏂囨湰鐨勫鏁版鐜?""
+        """计算文本的对数概率"""
         tokens = text.split()
         log_p = 0.0
         for i, token in enumerate(tokens):
             if i == 0:
-                # Unigram姒傜巼
+                # Unigram概率
                 p = (self.unigram_counts[token] + 1) / (self.total_count + len(self.unigram_counts))
             else:
                 prev_token = tokens[i - 1]
-                # Bigram姒傜巼锛屼娇鐢ㄥ姞涓€骞虫粦
+                # Bigram概率，使用加一平滑
                 count = self.bigram_counts[prev_token][token]
                 total = sum(self.bigram_counts[prev_token].values())
                 p = (count + 1) / (total + len(self.unigram_counts))
@@ -82,27 +82,27 @@ class BigramModel:
         return log_p
 ```
 
-### 1.3 KenLM锛氶珮鏁圢-gram璇█妯″瀷
+### 1.3 KenLM：高效N-gram语言模型
 
-**KenLM** 鏄竴涓珮搴︿紭鍖栫殑N-gram璇█妯″瀷搴擄紝鏀寔:
-- **淇敼Kneser-Ney骞虫粦**: 姣旂畝鍗曠殑鍔犱竴骞虫粦鏁堟灉鏇村ソ
-- **鍥為€€鏈哄埗 (Backoff)**: 褰撻珮闃秐-gram鏈杩囨椂锛屽洖閫€鍒颁綆闃?
-- **鍘嬬缉瀛樺偍**: 浣跨敤Trie缁撴瀯鍜岄噺鍖栨妧鏈?
+**KenLM** 是一个高度优化的N-gram语言模型库，支持:
+- **修改Kneser-Ney平滑**: 比简单的加一平滑效果更好
+- **回退机制 (Backoff)**: 当高阶n-gram未见过时，回退到低阶
+- **压缩存储**: 使用Trie结构和量化技术
 
-#### 瀹夎涓庝娇鐢?
+#### 安装与使用
 
 ```bash
 pip install kenlm
-# 闇€瑕佸厛鐢╨mplz宸ュ叿璁粌.arpa妯″瀷
+# 需要先用lmplz工具训练.arpa模型
 ```
 
 ```python
 import kenlm
 
-# 鍔犺浇棰勮缁冪殑KenLM妯″瀷
+# 加载预训练的KenLM模型
 model = kenlm.Model("wiki_en_5gram.arpa")
 
-# 璁＄畻鍙ュ瓙鐨勫鏁版鐜囷紙浠?0涓哄簳锛?
+# 计算句子的对数概率（以10为底）
 text = "The quick brown fox jumps over the lazy dog"
 log_prob = model.score(text)
 perplexity = model.perplexity(text)
@@ -111,64 +111,64 @@ print(f"Log probability: {log_prob}")
 print(f"Perplexity: {perplexity}")
 ```
 
-#### 鍥為€€鏈哄埗璇﹁В
+#### 回退机制详解
 
-褰撻亣鍒版湭瑙佽繃鐨刵-gram鏃讹紝KenLM浣跨敤鍥為€€锛?
+当遇到未见过的n-gram时，KenLM使用回退：
 
 $$P(x_i | x_{i-n+1:i-1}) = \begin{cases} 
 P_{MLE}(x_i | x_{i-n+1:i-1}) & \text{if count} > 0 \\
 \alpha(x_{i-n+1:i-1}) \cdot P(x_i | x_{i-n+2:i-1}) & \text{otherwise}
 \end{cases}$$
 
-鍏朵腑 $\alpha$ 鏄洖閫€鏉冮噸锛岀‘淇濇鐜囧綊涓€鍖栥€?
+其中 $\alpha$ 是回退权重，确保概率归一化。
 
-### 1.4 fastText 鏂囨湰鍒嗙被鍣?
+### 1.4 fastText 文本分类器
 
-**fastText** 鏄疐acebook寮€鍙戠殑楂樻晥鏂囨湰鍒嗙被宸ュ叿锛岀壒鍒€傚悎锛?
-- **璇█璇嗗埆 (Language Identification)**
-- **涓婚鍒嗙被**
-- **璐ㄩ噺璇勫垎**
+**fastText** 是Facebook开发的高效文本分类工具，特别适合：
+- **语言识别 (Language Identification)**
+- **主题分类**
+- **质量评分**
 
-#### 鏍稿績鎶€鏈?
+#### 核心技术
 
-1. **璇嶈妯″瀷 + N-gram鐗瑰緛**: 鎹曡幏璇嶅簭淇℃伅
-2. **灞傛Softmax**: 鍔犻€熷ぇ璇嶈〃鍒嗙被
-3. **瀛愯瘝琛ㄧず**: 浣跨敤瀛楃n-gram澶勭悊OOV璇?
+1. **词袋模型 + N-gram特征**: 捕获词序信息
+2. **层次Softmax**: 加速大词表分类
+3. **子词表示**: 使用字符n-gram处理OOV词
 
 ```python
 import fasttext
 
-# 璁粌璇█璇嗗埆妯″瀷
-# 璁粌鏁版嵁鏍煎紡: __label__en This is English text
+# 训练语言识别模型
+# 训练数据格式: __label__en This is English text
 # model = fasttext.train_supervised("train.txt")
 
-# 浣跨敤棰勮缁冪殑璇█璇嗗埆妯″瀷
+# 使用预训练的语言识别模型
 lang_model = fasttext.load_model("lid.176.bin")
 
 text = "This is a sample text"
-predictions = lang_model.predict(text, k=3)  # 杩斿洖top-3棰勬祴
-# 杈撳嚭: (('__label__en', '__label__de', '__label__nl'), (0.95, 0.02, 0.01))
+predictions = lang_model.predict(text, k=3)  # 返回top-3预测
+# 输出: (('__label__en', '__label__de', '__label__nl'), (0.95, 0.02, 0.01))
 
 label, confidence = predictions[0][0], predictions[1][0]
 print(f"Language: {label.replace('__label__', '')}, Confidence: {confidence:.2f}")
 ```
 
-### 1.5 閲嶈鎬ч噸閲囨牱 (DSIR - Data Selection via Importance Resampling)
+### 1.5 重要性重采样 (DSIR - Data Selection via Importance Resampling)
 
-**DSIR**鏄竴绉嶆暟鎹€夋嫨鏂规硶锛屾牳蹇冩€濇兂鏄細**璁╅€変腑鐨勬暟鎹垎甯冩帴杩戠洰鏍囧垎甯?*銆?
+**DSIR**是一种数据选择方法，核心思想是：**让选中的数据分布接近目标分布**。
 
-#### 鏁板鍘熺悊
+#### 数学原理
 
-璁?
-- $P_{raw}(x)$: 鍘熷鏁版嵁锛堝Common Crawl锛夌殑鍒嗗竷
-- $P_{target}(x)$: 鐩爣鏁版嵁锛堝Wikipedia楂樿川閲忔枃鏈級鐨勫垎甯?
+设:
+- $P_{raw}(x)$: 原始数据（如Common Crawl）的分布
+- $P_{target}(x)$: 目标数据（如Wikipedia高质量文本）的分布
 
-閲嶈鎬ф潈閲?
+重要性权重:
 $$w(x) = \frac{P_{target}(x)}{P_{raw}(x)}$$
 
-瀵逛簬鏂囨湰 $x$锛屼互姒傜巼 $\min(1, \lambda \cdot w(x))$ 閫夋嫨瀹冿紝鍏朵腑 $\lambda$ 鎺у埗閫夋嫨鐜囥€?
+对于文本 $x$，以概率 $\min(1, \lambda \cdot w(x))$ 选择它，其中 $\lambda$ 控制选择率。
 
-#### 瀹炵幇锛氫娇鐢↘enLM璁＄畻閲嶈鎬ф潈閲?
+#### 实现：使用KenLM计算重要性权重
 
 ```python
 import kenlm
@@ -176,24 +176,24 @@ import math
 import random
 
 class DSIRFilter:
-    """鍩轰簬DSIR鐨勬暟鎹€夋嫨鍣?""
+    """基于DSIR的数据选择器"""
     
     def __init__(self, target_model_path: str, raw_model_path: str):
         self.target_model = kenlm.Model(target_model_path)
         self.raw_model = kenlm.Model(raw_model_path)
     
     def compute_importance_weight(self, text: str) -> float:
-        """璁＄畻閲嶈鎬ф潈閲?w(x) = P_target(x) / P_raw(x)"""
-        # KenLM杩斿洖log10姒傜巼锛岄渶瑕佽浆鎹?
+        """计算重要性权重 w(x) = P_target(x) / P_raw(x)"""
+        # KenLM返回log10概率，需要转换
         log_p_target = self.target_model.score(text)
         log_p_raw = self.raw_model.score(text)
         
-        # 杞崲涓哄鏁版潈閲嶏紙闃叉鏁板€兼孩鍑猴級
+        # 转换为对数权重（防止数值溢出）
         log_weight = (log_p_target - log_p_raw) * math.log(10)
         return math.exp(log_weight)
     
     def select(self, texts: list[str], selection_rate: float = 0.1) -> list[str]:
-        """鏍规嵁DSIR閫夋嫨鏂囨湰"""
+        """根据DSIR选择文本"""
         selected = []
         for text in texts:
             weight = self.compute_importance_weight(text)
@@ -203,25 +203,25 @@ class DSIRFilter:
         return selected
 ```
 
-#### DSIR鏁堟灉楠岃瘉
+#### DSIR效果验证
 
-![DSIR瀹為獙缁撴灉](./images/l14-dsir-results.png)
+![DSIR实验结果](./images/dsir-results.png)
 
-DSIR鍦ㄤ笅娓镐换鍔′笂鐨勮〃鐜版樉钁椾紭浜庨殢鏈洪噰鏍凤紝璇佹槑浜嗛噸瑕佹€ч噸閲囨牱鐨勬湁鏁堟€с€?
+DSIR在下游任务上的表现显著优于随机采样，证明了重要性重采样的有效性。
 
 ---
 
-## 浜屻€佽繃婊ゅ簲鐢ㄥ満鏅?(Filtering Applications)
+## 二、过滤应用场景 (Filtering Applications)
 
-### 2.1 璇█璇嗗埆杩囨护 (Language Identification)
+### 2.1 语言识别过滤 (Language Identification)
 
-璇█璇嗗埆鏄渶鍩虹鐨勮繃婊ゆ楠わ紝鐢ㄤ簬绛涢€夌壒瀹氳瑷€鐨勬枃鏈€?
+语言识别是最基础的过滤步骤，用于筛选特定语言的文本。
 
 ```python
 import fasttext
 
 class LanguageFilter:
-    """璇█杩囨护鍣?""
+    """语言过滤器"""
     
     def __init__(self, model_path: str = "lid.176.bin"):
         self.model = fasttext.load_model(model_path)
@@ -229,7 +229,7 @@ class LanguageFilter:
     def filter(self, texts: list[str], 
                target_lang: str = "en", 
                threshold: float = 0.8) -> list[str]:
-        """绛涢€夋寚瀹氳瑷€鐨勬枃鏈?""
+        """筛选指定语言的文本"""
         filtered = []
         for text in texts:
             predictions = self.model.predict(text)
@@ -242,32 +242,32 @@ class LanguageFilter:
         return filtered
 ```
 
-### 2.2 璐ㄩ噺杩囨护 (Quality Filtering)
+### 2.2 质量过滤 (Quality Filtering)
 
-璐ㄩ噺杩囨护浣跨敤澶氱淇″彿璇勪及鏂囨湰璐ㄩ噺锛?
+质量过滤使用多种信号评估文本质量：
 
-#### 2.2.1 鍩轰簬瑙勫垯鐨勮繃婊?
+#### 2.2.1 基于规则的过滤
 
 ```python
 def is_high_quality_rule_based(text: str) -> bool:
-    """鍩轰簬瑙勫垯鐨勮川閲忚繃婊?""
-    # 妫€鏌ラ暱搴?
+    """基于规则的质量过滤"""
+    # 检查长度
     word_count = len(text.split())
     if word_count < 50 or word_count > 100000:
         return False
     
-    # 妫€鏌ョ壒娈婂瓧绗︽瘮渚?
+    # 检查特殊字符比例
     alpha_ratio = sum(c.isalpha() for c in text) / len(text)
     if alpha_ratio < 0.7:
         return False
     
-    # 妫€鏌ラ噸澶嶈姣斾緥
+    # 检查重复行比例
     lines = text.split('\n')
     unique_lines = set(lines)
     if len(unique_lines) / len(lines) < 0.5:
         return False
     
-    # 妫€鏌?the"/"be"/"and"绛夊父瑙佽瘝姣斾緥锛堣嫳鏂囪川閲忎俊鍙凤級
+    # 检查"the"/"be"/"and"等常见词比例（英文质量信号）
     words = text.lower().split()
     common_words = set(["the", "be", "to", "of", "and", "a", "in"])
     common_ratio = sum(1 for w in words if w in common_words) / len(words)
@@ -277,13 +277,13 @@ def is_high_quality_rule_based(text: str) -> bool:
     return True
 ```
 
-#### 2.2.2 鍩轰簬妯″瀷鐨勮繃婊わ紙濡侱CLM鏂规硶锛?
+#### 2.2.2 基于模型的过滤（如DCLM方法）
 
-DCLM浣跨敤fastText鍒嗙被鍣ㄥ尯鍒嗛珮璐ㄩ噺锛堝OpenAI鐨刉ebText绛涢€夌粨鏋滐級鍜屼綆璐ㄩ噺鏂囨湰锛?
+DCLM使用fastText分类器区分高质量（如OpenAI的WebText筛选结果）和低质量文本：
 
 ```python
 class QualityClassifier:
-    """鍩轰簬fastText鐨勮川閲忓垎绫诲櫒"""
+    """基于fastText的质量分类器"""
     
     def __init__(self, model_path: str):
         self.model = fasttext.load_model(model_path)
@@ -296,13 +296,13 @@ class QualityClassifier:
         return label == "__label__hq" and confidence >= threshold
 ```
 
-### 2.3 姣掓€ц繃婊?(Toxicity Filtering)
+### 2.3 毒性过滤 (Toxicity Filtering)
 
-姣掓€ц繃婊ょЩ闄ゆ湁瀹炽€佹敾鍑绘€ф垨涓嶅綋鍐呭銆?
+毒性过滤移除有害、攻击性或不当内容。
 
 ```python
 class ToxicityFilter:
-    """姣掓€у唴瀹硅繃婊ゅ櫒"""
+    """毒性内容过滤器"""
     
     def __init__(self, model_path: str, blocklist_path: str = None):
         self.model = fasttext.load_model(model_path)
@@ -312,55 +312,55 @@ class ToxicityFilter:
                 self.blocklist = set(line.strip().lower() for line in f)
     
     def contains_blocklist(self, text: str) -> bool:
-        """妫€鏌ユ槸鍚﹀寘鍚粦鍚嶅崟璇嶆眹"""
+        """检查是否包含黑名单词汇"""
         words = set(text.lower().split())
         return bool(words & self.blocklist)
     
     def is_toxic(self, text: str, threshold: float = 0.5) -> bool:
-        """浣跨敤妯″瀷鍒ゆ柇鏄惁鏈夋瘨"""
+        """使用模型判断是否有毒"""
         predictions = self.model.predict(text)
         label = predictions[0][0]
         confidence = predictions[1][0]
         return label == "__label__toxic" and confidence >= threshold
     
     def filter(self, texts: list[str]) -> list[str]:
-        """杩囨护姣掓€у唴瀹?""
+        """过滤毒性内容"""
         return [t for t in texts 
                 if not self.contains_blocklist(t) and not self.is_toxic(t)]
 ```
 
 ---
 
-## 涓夈€佸幓閲嶆妧鏈?(Deduplication Techniques)
+## 三、去重技术 (Deduplication Techniques)
 
-### 3.1 涓轰粈涔堥渶瑕佸幓閲嶏紵
+### 3.1 为什么需要去重？
 
-鐮旂┒琛ㄦ槑锛?
-- **閲嶅鏁版嵁鎹熷妯″瀷鎬ц兘**: 妯″瀷鍙兘杩囨嫙鍚堝埌閲嶅鍐呭
-- **璁粌鏁堢巼涓嬮檷**: 娴垂璁＄畻璧勬簮鍦ㄩ噸澶嶆牱鏈笂
-- **闅愮椋庨櫓**: 閲嶅鍐呭鏇村鏄撹璁板繂鍜屾硠闇?
+研究表明：
+- **重复数据损害模型性能**: 模型可能过拟合到重复内容
+- **训练效率下降**: 浪费计算资源在重复样本上
+- **隐私风险**: 重复内容更容易被记忆和泄露
 
-### 3.2 绮剧‘鍘婚噸 (Exact Deduplication)
+### 3.2 精确去重 (Exact Deduplication)
 
-绮剧‘鍘婚噸绉婚櫎瀹屽叏鐩稿悓鐨勬枃妗ｆ垨娈佃惤銆?
+精确去重移除完全相同的文档或段落。
 
-#### 3.2.1 鍩轰簬鍝堝笇鐨勭簿纭幓閲?
+#### 3.2.1 基于哈希的精确去重
 
 ```python
 import hashlib
 
 class ExactDeduplicator:
-    """鍩轰簬鍝堝笇鐨勭簿纭幓閲?""
+    """基于哈希的精确去重"""
     
     def __init__(self):
         self.seen_hashes = set()
     
     def get_hash(self, text: str) -> str:
-        """璁＄畻鏂囨湰鐨凷HA-256鍝堝笇"""
+        """计算文本的SHA-256哈希"""
         return hashlib.sha256(text.encode('utf-8')).hexdigest()
     
     def deduplicate(self, texts: list[str]) -> list[str]:
-        """鍘婚櫎閲嶅鏂囨湰"""
+        """去除重复文本"""
         unique_texts = []
         for text in texts:
             h = self.get_hash(text)
@@ -370,11 +370,11 @@ class ExactDeduplicator:
         return unique_texts
 ```
 
-#### 3.2.2 琛岀骇鍘婚噸
+#### 3.2.2 行级去重
 
 ```python
 def deduplicate_lines(texts: list[str]) -> list[str]:
-    """瀵规瘡绡囨枃妗ｇ殑琛岃繘琛屽幓閲?""
+    """对每篇文档的行进行去重"""
     result = []
     for text in texts:
         lines = text.split('\n')
@@ -388,17 +388,17 @@ def deduplicate_lines(texts: list[str]) -> list[str]:
     return result
 ```
 
-### 3.3 甯冮殕杩囨护鍣?(Bloom Filter)
+### 3.3 布隆过滤器 (Bloom Filter)
 
-甯冮殕杩囨护鍣ㄦ槸涓€绉嶇┖闂撮珮鏁堢殑姒傜巼鏁版嵁缁撴瀯锛岀敤浜庢祴璇曞厓绱犳槸鍚﹀湪闆嗗悎涓€?
+布隆过滤器是一种空间高效的概率数据结构，用于测试元素是否在集合中。
 
-#### 鐗规€?
+#### 特性
 
-- **鍙兘鏈夊亣闃虫€?(False Positive)**: 鍙兘閿欒鍦拌涓轰笉鍦ㄩ泦鍚堜腑鐨勫厓绱犲湪闆嗗悎涓?
-- **缁濇棤鍋囬槾鎬?(No False Negative)**: 濡傛灉璇翠笉鍦紝鍒欑‘瀹炰笉鍦?
-- **绌洪棿鏁堢巼鏋侀珮**: 杩滃皬浜庡瓨鍌ㄥ疄闄呭厓绱?
+- **可能有假阳性 (False Positive)**: 可能错误地认为不在集合中的元素在集合中
+- **绝无假阴性 (No False Negative)**: 如果说不在，则确实不在
+- **空间效率极高**: 远小于存储实际元素
 
-#### Python瀹炵幇
+#### Python实现
 
 ```python
 import mmh3  # MurmurHash3
@@ -406,29 +406,29 @@ from bitarray import bitarray
 import math
 
 class BloomFilter:
-    """甯冮殕杩囨护鍣ㄥ疄鐜?""
+    """布隆过滤器实现"""
     
     def __init__(self, expected_items: int, false_positive_rate: float = 0.01):
-        # 璁＄畻鏈€浼樹綅鏁扮粍澶у皬
+        # 计算最优位数组大小
         self.size = self._optimal_size(expected_items, false_positive_rate)
-        # 璁＄畻鏈€浼樺搱甯屽嚱鏁版暟閲?
+        # 计算最优哈希函数数量
         self.num_hashes = self._optimal_num_hashes(self.size, expected_items)
-        # 鍒濆鍖栦綅鏁扮粍
+        # 初始化位数组
         self.bit_array = bitarray(self.size)
         self.bit_array.setall(0)
     
     def _optimal_size(self, n: int, p: float) -> int:
-        """璁＄畻鏈€浼樹綅鏁扮粍澶у皬: m = -n*ln(p) / (ln(2)^2)"""
+        """计算最优位数组大小: m = -n*ln(p) / (ln(2)^2)"""
         m = -n * math.log(p) / (math.log(2) ** 2)
         return int(m)
     
     def _optimal_num_hashes(self, m: int, n: int) -> int:
-        """璁＄畻鏈€浼樺搱甯屾暟閲? k = (m/n) * ln(2)"""
+        """计算最优哈希数量: k = (m/n) * ln(2)"""
         k = (m / n) * math.log(2)
         return int(k)
     
     def _get_hash_positions(self, item: str) -> list[int]:
-        """鑾峰彇鍏冪礌鐨勬墍鏈夊搱甯屼綅缃?""
+        """获取元素的所有哈希位置"""
         positions = []
         for seed in range(self.num_hashes):
             hash_value = mmh3.hash(item, seed) % self.size
@@ -436,16 +436,16 @@ class BloomFilter:
         return positions
     
     def add(self, item: str):
-        """娣诲姞鍏冪礌"""
+        """添加元素"""
         for pos in self._get_hash_positions(item):
             self.bit_array[pos] = 1
     
     def contains(self, item: str) -> bool:
-        """妫€鏌ュ厓绱犳槸鍚﹀彲鑳藉瓨鍦?""
+        """检查元素是否可能存在"""
         return all(self.bit_array[pos] for pos in self._get_hash_positions(item))
     
     def add_and_check(self, item: str) -> bool:
-        """娣诲姞鍏冪礌骞惰繑鍥炴槸鍚﹀凡瀛樺湪锛堢敤浜庡幓閲嶏級"""
+        """添加元素并返回是否已存在（用于去重）"""
         positions = self._get_hash_positions(item)
         was_present = all(self.bit_array[pos] for pos in positions)
         for pos in positions:
@@ -453,12 +453,12 @@ class BloomFilter:
         return was_present
 ```
 
-#### 浣跨敤甯冮殕杩囨护鍣ㄨ繘琛孨-gram鍘婚噸
+#### 使用布隆过滤器进行N-gram去重
 
 ```python
 def bloom_ngram_dedup(texts: list[str], n: int = 5, 
                        bloom_size: int = 10_000_000) -> list[str]:
-    """浣跨敤甯冮殕杩囨护鍣ㄨ繘琛孨-gram绾у埆鍘婚噸"""
+    """使用布隆过滤器进行N-gram级别去重"""
     bloom = BloomFilter(expected_items=bloom_size)
     result = []
     
@@ -466,7 +466,7 @@ def bloom_ngram_dedup(texts: list[str], n: int = 5,
         words = text.split()
         ngrams = [' '.join(words[i:i+n]) for i in range(len(words) - n + 1)]
         
-        # 璁＄畻閲嶅n-gram姣斾緥
+        # 计算重复n-gram比例
         duplicate_count = 0
         for ngram in ngrams:
             if bloom.add_and_check(ngram):
@@ -474,51 +474,51 @@ def bloom_ngram_dedup(texts: list[str], n: int = 5,
         
         duplicate_ratio = duplicate_count / len(ngrams) if ngrams else 0
         
-        # 濡傛灉閲嶅鐜囦綆浜庨槇鍊硷紝淇濈暀鏂囨。
+        # 如果重复率低于阈值，保留文档
         if duplicate_ratio < 0.5:
             result.append(text)
     
     return result
 ```
 
-### 3.4 杩戜技鍘婚噸锛歁inHash
+### 3.4 近似去重：MinHash
 
-**MinHash** 鐢ㄤ簬浼拌涓や釜闆嗗悎鐨凧accard鐩镐技搴︼紝鏄繎浼煎幓閲嶇殑鏍稿績绠楁硶銆?
+**MinHash** 用于估计两个集合的Jaccard相似度，是近似去重的核心算法。
 
-#### Jaccard鐩镐技搴?
+#### Jaccard相似度
 
 $$J(A, B) = \frac{|A \cap B|}{|A \cup B|}$$
 
-#### MinHash鍘熺悊
+#### MinHash原理
 
-1. 灏嗘枃妗ｈ〃绀轰负n-gram闆嗗悎
-2. 瀵归泦鍚堝簲鐢ㄥ涓殢鏈哄搱甯屽嚱鏁?
-3. 鍙栨瘡涓搱甯屽嚱鏁扮殑鏈€灏忓€间綔涓虹鍚?
-4. 涓や釜鏂囨。鐨勭鍚嶇浉鍚岀殑姒傜巼绛変簬鍏禞accard鐩镐技搴?
+1. 将文档表示为n-gram集合
+2. 对集合应用多个随机哈希函数
+3. 取每个哈希函数的最小值作为签名
+4. 两个文档的签名相同的概率等于其Jaccard相似度
 
 ```python
 import mmh3
 import numpy as np
 
 class MinHash:
-    """MinHash绛惧悕鐢熸垚鍣?""
+    """MinHash签名生成器"""
     
     def __init__(self, num_hashes: int = 128):
         self.num_hashes = num_hashes
-        # 浣跨敤涓嶅悓seed鐢熸垚澶氫釜鍝堝笇鍑芥暟
+        # 使用不同seed生成多个哈希函数
         self.seeds = list(range(num_hashes))
     
     def get_signature(self, document: str, ngram_size: int = 5) -> np.ndarray:
-        """璁＄畻鏂囨。鐨凪inHash绛惧悕"""
-        # 鐢熸垚n-gram闆嗗悎
+        """计算文档的MinHash签名"""
+        # 生成n-gram集合
         words = document.split()
         ngrams = set(' '.join(words[i:i+ngram_size]) 
                      for i in range(len(words) - ngram_size + 1))
         
-        # 鍒濆鍖栫鍚嶄负鏈€澶у€?
+        # 初始化签名为最大值
         signature = np.full(self.num_hashes, np.iinfo(np.int32).max, dtype=np.int32)
         
-        # 瀵规瘡涓猲-gram璁＄畻鎵€鏈夊搱甯屽€硷紝鍙栨渶灏?
+        # 对每个n-gram计算所有哈希值，取最小
         for ngram in ngrams:
             for i, seed in enumerate(self.seeds):
                 hash_value = mmh3.hash(ngram, seed)
@@ -528,33 +528,33 @@ class MinHash:
         return signature
     
     def estimate_similarity(self, sig1: np.ndarray, sig2: np.ndarray) -> float:
-        """浼拌涓や釜绛惧悕鐨凧accard鐩镐技搴?""
+        """估计两个签名的Jaccard相似度"""
         return np.mean(sig1 == sig2)
 ```
 
-### 3.5 灞€閮ㄦ晱鎰熷搱甯?(LSH - Locality Sensitive Hashing)
+### 3.5 局部敏感哈希 (LSH - Locality Sensitive Hashing)
 
-**LSH** 鐢ㄤ簬楂樻晥鏌ユ壘鐩镐技鏂囨。锛岄伩鍏嶄袱涓ゆ瘮杈冦€?
+**LSH** 用于高效查找相似文档，避免两两比较。
 
-#### 鍒嗘《绛栫暐 (Banding)
+#### 分桶策略 (Banding)
 
-灏哅inHash绛惧悕鍒嗘垚 $b$ 涓甫 (bands)锛屾瘡甯?$r$ 琛岋細
-- 濡傛灉浠绘剰涓€涓甫鐨勭鍚嶅畬鍏ㄧ浉鍚岋紝鍒欒涓烘槸鍊欓€夊
-- 璋冩暣 $b$ 鍜?$r$ 鍙互鎺у埗鐩镐技搴﹂槇鍊?
+将MinHash签名分成 $b$ 个带 (bands)，每带 $r$ 行：
+- 如果任意一个带的签名完全相同，则认为是候选对
+- 调整 $b$ 和 $r$ 可以控制相似度阈值
 
 ```python
 class LSH:
-    """灞€閮ㄦ晱鎰熷搱甯屽疄鐜?""
+    """局部敏感哈希实现"""
     
     def __init__(self, num_hashes: int = 128, num_bands: int = 32):
         self.num_hashes = num_hashes
         self.num_bands = num_bands
         self.rows_per_band = num_hashes // num_bands
-        # 姣忎釜甯︿竴涓搱甯岃〃
+        # 每个带一个哈希表
         self.hash_tables = [dict() for _ in range(num_bands)]
     
     def add(self, doc_id: str, signature: np.ndarray):
-        """娣诲姞鏂囨。绛惧悕鍒癓SH绱㈠紩"""
+        """添加文档签名到LSH索引"""
         for band_idx in range(self.num_bands):
             start = band_idx * self.rows_per_band
             end = start + self.rows_per_band
@@ -565,7 +565,7 @@ class LSH:
             self.hash_tables[band_idx][band_signature].append(doc_id)
     
     def find_candidates(self, signature: np.ndarray) -> set:
-        """鎵惧埌鍊欓€夌浉浼兼枃妗?""
+        """找到候选相似文档"""
         candidates = set()
         for band_idx in range(self.num_bands):
             start = band_idx * self.rows_per_band
@@ -578,11 +578,11 @@ class LSH:
         return candidates
 ```
 
-### 3.6 瀹屾暣鐨勮繎浼煎幓閲嶆祦姘寸嚎
+### 3.6 完整的近似去重流水线
 
 ```python
 class FuzzyDeduplicator:
-    """鍩轰簬MinHash + LSH鐨勮繎浼煎幓閲?""
+    """基于MinHash + LSH的近似去重"""
     
     def __init__(self, num_hashes: int = 128, num_bands: int = 32,
                  similarity_threshold: float = 0.8):
@@ -592,13 +592,13 @@ class FuzzyDeduplicator:
         self.signatures = {}
     
     def deduplicate(self, texts: list[str]) -> list[str]:
-        """鎵ц杩戜技鍘婚噸"""
+        """执行近似去重"""
         unique_indices = []
         
         for idx, text in enumerate(texts):
             sig = self.minhash.get_signature(text)
             
-            # 鎵惧埌鍊欓€夌浉浼兼枃妗?
+            # 找到候选相似文档
             candidates = self.lsh.find_candidates(sig)
             
             is_duplicate = False
@@ -620,13 +620,13 @@ class FuzzyDeduplicator:
 
 ---
 
-## 鍥涖€佸畬鏁存祦姘寸嚎 (Complete Pipeline)
+## 四、完整流水线 (Complete Pipeline)
 
-### 4.1 绔埌绔暟鎹鐞嗘祦姘寸嚎
+### 4.1 端到端数据处理流水线
 
 ```python
 class DataProcessingPipeline:
-    """瀹屾暣鐨勬暟鎹繃婊ゅ拰鍘婚噸娴佹按绾?""
+    """完整的数据过滤和去重流水线"""
     
     def __init__(self):
         self.lang_filter = LanguageFilter()
@@ -636,24 +636,24 @@ class DataProcessingPipeline:
         self.fuzzy_dedup = FuzzyDeduplicator()
     
     def process(self, texts: list[str], target_lang: str = "en") -> list[str]:
-        """鎵ц瀹屾暣鐨勫鐞嗘祦姘寸嚎"""
-        # Step 1: 璇█杩囨护
+        """执行完整的处理流水线"""
+        # Step 1: 语言过滤
         texts = self.lang_filter.filter(texts, target_lang)
         print(f"After language filter: {len(texts)} documents")
         
-        # Step 2: 绮剧‘鍘婚噸
+        # Step 2: 精确去重
         texts = self.exact_dedup.deduplicate(texts)
         print(f"After exact dedup: {len(texts)} documents")
         
-        # Step 3: 璐ㄩ噺杩囨护
+        # Step 3: 质量过滤
         texts = [t for t in texts if self.quality_classifier.is_high_quality(t)]
         print(f"After quality filter: {len(texts)} documents")
         
-        # Step 4: 姣掓€ц繃婊?
+        # Step 4: 毒性过滤
         texts = self.toxicity_filter.filter(texts)
         print(f"After toxicity filter: {len(texts)} documents")
         
-        # Step 5: 杩戜技鍘婚噸
+        # Step 5: 近似去重
         texts = self.fuzzy_dedup.deduplicate(texts)
         print(f"After fuzzy dedup: {len(texts)} documents")
         
@@ -662,39 +662,38 @@ class DataProcessingPipeline:
 
 ---
 
-## 浜斻€佸叧閿鐐规€荤粨 (Key Takeaways)
+## 五、关键要点总结 (Key Takeaways)
 
-### 杩囨护鎶€鏈€荤粨
+### 过滤技术总结
 
-| 鎶€鏈?| 鐢ㄩ€?| 浼樼偣 | 缂虹偣 |
+| 技术 | 用途 | 优点 | 缺点 |
 |------|------|------|------|
-| KenLM | 璐ㄩ噺璇勫垎/DSIR | 蹇€熴€佸噯纭?| 闇€瑕佽缁冭鏂?|
-| fastText | 璇█/璐ㄩ噺/姣掓€у垎绫?| 楂樻晥銆佹槗鐢?| 闇€瑕佹爣娉ㄦ暟鎹?|
-| DSIR | 鍒嗗竷鍖归厤閲囨牱 | 鐞嗚淇濊瘉 | 闇€瑕佷袱涓瑷€妯″瀷 |
+| KenLM | 质量评分/DSIR | 快速、准确 | 需要训练语料 |
+| fastText | 语言/质量/毒性分类 | 高效、易用 | 需要标注数据 |
+| DSIR | 分布匹配采样 | 理论保证 | 需要两个语言模型 |
 
-### 鍘婚噸鎶€鏈€荤粨
+### 去重技术总结
 
-| 鎶€鏈?| 澶嶆潅搴?| 绌洪棿 | 鐗圭偣 |
+| 技术 | 复杂度 | 空间 | 特点 |
 |------|--------|------|------|
-| 鍝堝笇绮剧‘鍘婚噸 | O(n) | O(n) | 鏃犳崯锛屽彧澶勭悊瀹屽叏鐩稿悓 |
-| 甯冮殕杩囨护鍣?| O(n) | O(1)* | 鏈夊亣闃虫€э紝鏋佺渷绌洪棿 |
-| MinHash | O(n) | O(n路k) | 杩戜技锛屽鐞嗙浉浼兼枃妗?|
-| MinHash + LSH | O(n) 鏈熸湜 | O(n路k) | 閬垮厤涓や袱姣旇緝 |
+| 哈希精确去重 | O(n) | O(n) | 无损，只处理完全相同 |
+| 布隆过滤器 | O(n) | O(1)* | 有假阳性，极省空间 |
+| MinHash | O(n) | O(n·k) | 近似，处理相似文档 |
+| MinHash + LSH | O(n) 期望 | O(n·k) | 避免两两比较 |
 
-### 鏈€浣冲疄璺?
+### 最佳实践
 
-1. **娴佹按绾块『搴?*: 鍏堜究瀹滅殑杩囨护锛堣鍒欍€佽瑷€锛夆啋 鍐嶆槀璐电殑锛堟ā鍨嬭川閲忥級鈫?鏈€鍚庡幓閲?
-2. **闃堝€艰皟浼?*: 鏍规嵁涓嬫父浠诲姟琛ㄧ幇璋冩暣鍚勮繃婊ら槇鍊?
-3. **鍒嗗竷寮忓鐞?*: 瀵逛簬TB绾ф暟鎹紝闇€瑕丮apReduce/Spark鍒嗗竷寮忓疄鐜?
-4. **澶氭杩唬**: 鍙兘闇€瑕佸杞幓閲嶈揪鍒版渶浣虫晥鏋?
+1. **流水线顺序**: 先便宜的过滤（规则、语言）→ 再昂贵的（模型质量）→ 最后去重
+2. **阈值调优**: 根据下游任务表现调整各过滤阈值
+3. **分布式处理**: 对于TB级数据，需要MapReduce/Spark分布式实现
+4. **多次迭代**: 可能需要多轮去重达到最佳效果
 
 ---
 
-## 鍙傝€冭祫鏂?
+## 参考资料
 
 1. **KenLM**: Heafield, K. (2011). KenLM: Faster and Smaller Language Model Queries
 2. **fastText**: Joulin, A. et al. (2016). Bag of Tricks for Efficient Text Classification
 3. **DSIR**: Xie et al. (2023). Data Selection for Language Models via Importance Resampling
 4. **MinHash**: Broder, A. (1997). On the Resemblance and Containment of Documents
 5. **DCLM**: Li et al. (2024). DataComp-LM: In Search of the next Generation of Training Data
-

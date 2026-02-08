@@ -2,7 +2,7 @@
 
 这张图完整地展示了FlashAttention在前向传播中的核心计算流程. 它通过**平铺 (Tiling)**,**算子融合 (Operator Fusion)**和**在线Softmax (Online Softmax)** 等技巧的精妙结合, 实现了对注意力计算的极致优化.
 
-![FlashAttention的实现](images/l5-flash-attn-impl.png)
+![FlashAttention的实现](./File/img.png)
 > FlashAttention前向传播计算流程图. 它展示了如何通过分块处理和在线更新, 避免物化完整的N x N注意力矩阵.
 
 #### 1. 宏观策略: 平铺与内存分层

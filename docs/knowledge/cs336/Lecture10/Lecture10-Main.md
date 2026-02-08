@@ -123,7 +123,7 @@ $$
 * **来源**: DeepSeek V2/V3。
 * **原理**: 不直接减少头的数量，而是将 Key/Value 向量投影到一个低维潜在空间（Latent Space）。MLA 通过低秩压缩（Low-Rank Compression）大幅减少 KV Cache，同时保持了比 MQA/GQA 更强的表达能力。
 
-![DeepSeek MLA Architecture](images/l10-mha-gqa-mla-comparison.svg)
+![DeepSeek MLA Architecture](images/mha_gqa_mla_comparison.svg)
 
 > **图示详细解读**:
 >
@@ -139,7 +139,7 @@ $$
 * **原理**: 不仅在头之间共享 KV（如GQA），还在**层（Layers）**之间共享 KV。
 * **效果**: 进一步压缩内存，提升了精度/内存的帕累托前沿。
 
-![Cross-Layer Attention](images/l10-cross-layer-attention.png)
+![Cross-Layer Attention](images/cross_layer_attention.png)
 
 > **图示详细解读 (CLA)**:
 >
@@ -167,7 +167,7 @@ $$
   * **缺点**: 在“联想回忆（Associative Recall）”任务上表现不佳（例如：根据键找值）。
   * **现状**:**混合架构**是主流。例如 Jamba (Transformer + Mamba) 或 MiniMax-01 (Linear Attention + Full Attention)。仅保留少量 Full Attention 层即可维持高精度。
 
-![S4 Model Architecture](images/l10-s4-architecture.png)
+![S4 Model Architecture](images/s4_architecture.png)
 
 > **图示详细解读 (S4 Model)**:
 >
@@ -177,7 +177,7 @@ $$
 
 #### 4.1.1 SSM 的弱点：联想回忆 (Associative Recall)
 
-![Mamba vs Transformer Architecture](images/l10-mamba-ssm-architecture.png)
+![Mamba vs Transformer Architecture](images/mamba_ssm_architecture.png)
 
 > **图示详细解读 (SSM Weakness)**:
 >
@@ -192,7 +192,7 @@ $$
 * **优势**: 极高的生成速度（Inception Labs 演示）。
 * **潜力**: 彻底改变推理的游戏规则。
 
-![Diffusion-LM Generation](images/l10-diffusion-lm.png)
+![Diffusion-LM Generation](images/diffusion_lm.png)
 
 > **图示详细解读 (Diffusion-LM Process)**:
 >
@@ -238,7 +238,7 @@ $$
 * **核心性质**:**数学上保证**最终输出分布严格等同于大模型 $q$ 的分布。
 * **核心性质**:**数学上保证**最终输出分布严格等同于大模型 $q$ 的分布。
 
-![Speculative Decoding Diagram](images/l10-speculative-decoding-cover.png)
+![Speculative Decoding Diagram](images/speculative_decoding_cover.png)
 
 > **图示详细解读 (Speculative Decoding Process)**:
 > 上图展示了“草稿-验证”的流水线过程：
@@ -283,7 +283,7 @@ $$
   * 逻辑上连续，物理上离散。
 * **优势**: 内存利用率接近 100%，且支持**前缀共享 (Prefix Sharing)**（如系统提示词共享），通过写时复制 (Copy-on-Write) 实现。
 
-![PagedAttention Animation](images/l10-paged-attention.gif)
+![PagedAttention Animation](images/paged_attention.gif)
 
 > **动画详细解读**:
 >
