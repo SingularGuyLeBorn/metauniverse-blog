@@ -307,7 +307,7 @@ $$\text{clip}(r, 1-\epsilon, 1+\epsilon) = \begin{cases} 1-\epsilon & \text{if }
    - 这是我们的"起点"
 
 2. **绿色曲线：新策略 $\pi_{\theta}$**
-   - 表示经过优化后的策略
+   - **表示经过优化后的策略**
    - 我们希望它比旧策略更好
    - 但不能偏离太远
 
