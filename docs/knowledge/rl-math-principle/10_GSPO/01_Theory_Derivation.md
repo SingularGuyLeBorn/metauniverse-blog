@@ -48,7 +48,7 @@ $$r^{seq} = \prod_{t=1}^T \frac{\pi_\theta(y_t|y_{<t})}{\pi_{old}(y_t|y_{<t})} =
 
 ### 1.2 MoE训练的特殊问题
 
-Mixture-of-Experts (MoE) 模型在GRPO训练中经常崩溃：
+~~Mixture-of-Experts (MoE) 模型在GRPO训练中经常崩溃：~~
 
 - **原因**：专家路由的微小变化导致token级概率剧烈波动
 - **现象**：训练loss爆炸，模型崩溃
