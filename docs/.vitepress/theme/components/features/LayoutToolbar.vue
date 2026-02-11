@@ -10,9 +10,11 @@
 import { ref, computed } from 'vue'
 import { useData } from 'vitepress'
 import { useLayoutStore } from '../../stores/layout'
+import { useAnnotationStore } from '../../stores/annotation'
 import FindInPage from './FindInPage.vue'
 
 const layoutStore = useLayoutStore()
+const annotationStore = useAnnotationStore()
 const showFind = ref(false)
 
 const { page, frontmatter } = useData()
@@ -77,6 +79,16 @@ const isDocPage = computed(() => {
         </svg>
       </button>
 
+      <!-- Zen Mode Switch -->
+      <button 
+        class="btn" 
+        @click="layoutStore.toggleZenMode()" 
+        :class="{ active: layoutStore.zenMode }" 
+        title="禅模式 (Zen Mode)"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+      </button>
+
       <!-- 查找工具 -->
       <button 
         class="btn" 
@@ -87,6 +99,20 @@ const isDocPage = computed(() => {
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <circle cx="11" cy="11" r="8"/>
           <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+      </button>
+
+      <!-- Markup Mode (Annotation) -->
+      <button 
+        class="btn markup-btn" 
+        @click="annotationStore.toggleMarkupMode()" 
+        :class="{ active: annotationStore.isMarkupMode }" 
+        title="批注模式 (Markup Mode)"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M12 19l7-7 3 3-7 7-3-3z"/>
+          <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/>
+          <path d="M2 2l1.5 1.5"/>
         </svg>
       </button>
     </div>
@@ -120,6 +146,7 @@ const isDocPage = computed(() => {
 }
 .btn:hover { background: var(--vp-c-bg-soft); color: var(--vp-c-text-1); }
 .btn.active { color: var(--vp-c-brand-1); background: var(--vp-c-bg-soft); }
+.markup-btn.active { color: var(--vp-c-brand-1); background: rgba(var(--vp-c-brand-1-rgb, 107, 114, 255), 0.1); }
 
 .width-group {
   display: flex;

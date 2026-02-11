@@ -275,6 +275,181 @@ export default defineConfig({
         'lz-string',
         'mitt'
       ]
-    }
+    },
+
+    // 自定义插件：处理批注数据的本地保存
+    plugins: [
+      {
+        name: 'markdown-editor-api',
+        configureServer(server) {
+          server.middlewares.use((req, res, next) => {
+            // 虚拟 Markdown 转换拦截 (影子文件访问)
+            if (req.url && /\.(py|ipynb|pdf|ppt|pptx|doc|docx)\.md$/.test(req.url)) {
+              const baseFile = req.url.replace(/\.md$/, '')
+              const fullPath = path.resolve(__dirname, '..', baseFile.replace(/^\//, ''))
+              if (fs.existsSync(fullPath)) {
+                const ext = path.extname(baseFile).toLowerCase()
+                let content = ''
+                if (ext === '.ipynb') {
+                   try {
+                     const json = JSON.parse(fs.readFileSync(fullPath, 'utf-8'))
+                     content = json.cells?.map((c: any) => c.cell_type === 'markdown' ? c.source.join('') : (c.cell_type === 'code' ? '```python\n' + c.source.join('') + '\n```' : '')).join('\n\n') || ''
+                   } catch(e) { content = 'Error parsing notebook' }
+                } else {
+                   content = `::: code-group\n\n<<< ./${path.basename(baseFile)}{${ext.slice(1)}}\n\n:::`
+                }
+                res.setHeader('Content-Type', 'text/markdown')
+                return res.end(`---\ntitle: ${path.basename(baseFile)}\n---\n\n# ${path.basename(baseFile)}\n\n${content}`)
+              }
+            }
+
+            // 读取源码原文
+            if (req.url?.startsWith('/api/read-md?path=') && req.method === 'GET') {
+              const url = new URL(req.url, `http://${req.headers.host}`)
+              const filePath = url.searchParams.get('path')
+              if (!filePath) {
+                res.statusCode = 400
+                return res.end('Path missing')
+              }
+              try {
+                // 自动处理虚拟路径
+                const targetPath = filePath.endsWith('.md') && !fs.existsSync(path.resolve(__dirname, '..', filePath.replace(/^\//, '')))
+                  ? filePath.replace(/\.md$/, '')
+                  : filePath;
+                const fullPath = path.resolve(__dirname, '..', targetPath.replace(/^\//, ''))
+                const content = fs.readFileSync(fullPath, 'utf-8')
+                res.setHeader('Content-Type', 'application/json')
+                res.end(JSON.stringify({ content, isVirtual: targetPath !== filePath }))
+              } catch (e) {
+                res.statusCode = 500
+                res.end(JSON.stringify({ error: 'Failed to read file' }))
+              }
+            } 
+            // 保存并全自动化 Git Commit
+            else if (req.url === '/api/save-md' && req.method === 'POST') {
+              let body = ''
+              req.on('data', chunk => { body += chunk })
+              req.on('end', () => {
+                try {
+                  const { filePath, content, message } = JSON.parse(body)
+                  const targetPath = filePath.endsWith('.md') && !fs.existsSync(path.resolve(__dirname, '..', filePath.replace(/^\//, '')))
+                    ? filePath.replace(/\.md$/, '')
+                    : filePath;
+                  const fullPath = path.resolve(__dirname, '..', targetPath.replace(/^\//, ''))
+                  
+                  // 1. 历史备份
+                  const historyDir = path.resolve(__dirname, 'history')
+                  if (!fs.existsSync(historyDir)) fs.mkdirSync(historyDir, { recursive: true })
+                  const fileName = path.basename(targetPath)
+                  const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+                  const historyPath = path.join(historyDir, `${fileName}_${timestamp}.md`)
+                  if (fs.existsSync(fullPath)) fs.writeFileSync(historyPath, fs.readFileSync(fullPath))
+
+                  // 2. 写入文件
+                  fs.writeFileSync(fullPath, content)
+                  
+                  // 3. Git 自动化操作
+                  import('node:child_process').then(({ execSync }) => {
+                    try {
+                      execSync(`git add "${fullPath}"`, { encoding: 'utf8' })
+                      execSync(`git commit -m "Auto-edit: ${fileName} - ${message || 'No message'}"`, { encoding: 'utf8' })
+                    } catch(gitError: any) {
+                      console.warn('Git commit failed (likely no changes or git not init):', gitError.message)
+                    }
+                  })
+                  
+                  res.statusCode = 200
+                  res.end(JSON.stringify({ success: true, historyFile: historyPath }))
+                } catch (e) {
+                  res.statusCode = 500
+                  res.end(JSON.stringify({ error: 'Failed to save file' }))
+                }
+              })
+            } 
+            // Git 回滚接口
+            else if (req.url === '/api/rollback' && req.method === 'POST') {
+              let body = ''
+              req.on('data', chunk => { body += chunk })
+              req.on('end', () => {
+                try {
+                  const { filePath, historyFile } = JSON.parse(body)
+                  const fullPath = path.resolve(__dirname, '..', filePath.replace(/^\//, ''))
+                  const historyPath = path.resolve(__dirname, 'history', historyFile)
+                  
+                  if (fs.existsSync(historyPath)) {
+                    const content = fs.readFileSync(historyPath, 'utf-8')
+                    fs.writeFileSync(fullPath, content)
+                    
+                    // 记录回滚
+                    import('node:child_process').then(({ execSync }) => {
+                      try {
+                        execSync(`git add "${fullPath}"`)
+                        execSync(`git commit -m "Rollback: ${path.basename(filePath)} from ${historyFile}"`)
+                      } catch(e) {}
+                    })
+                    
+                    res.statusCode = 200
+                    res.end(JSON.stringify({ success: true }))
+                  } else {
+                    res.statusCode = 404
+                    res.end('History file not found')
+                  }
+                } catch(e) {
+                  res.statusCode = 500
+                  res.end('Rollback failed')
+                }
+              })
+            }
+            // 列出历史记录文件
+            else if (req.url?.startsWith('/api/list-history?path=') && req.method === 'GET') {
+              const url = new URL(req.url, `http://${req.headers.host}`)
+              const filePath = url.searchParams.get('path')
+              if (!filePath) {
+                res.statusCode = 400
+                return res.end('Path missing')
+              }
+              try {
+                const historyDir = path.resolve(__dirname, 'history')
+                const fileName = path.basename(filePath, '.md')
+                if (!fs.existsSync(historyDir)) {
+                  return res.end(JSON.stringify({ history: [] }))
+                }
+                const files = fs.readdirSync(historyDir)
+                  .filter(f => f.startsWith(fileName + '_'))
+                  .map(f => ({
+                    name: f,
+                    time: fs.statSync(path.join(historyDir, f)).mtime,
+                    path: `/api/read-history?file=${f}`
+                  }))
+                  .sort((a, b) => b.time.getTime() - a.time.getTime())
+                
+                res.setHeader('Content-Type', 'application/json')
+                res.end(JSON.stringify({ history: files }))
+              } catch (e) {
+                res.statusCode = 500
+                res.end(JSON.stringify({ error: 'Failed to list history' }))
+              }
+            }
+            // 读取具体的历史备份内容
+            else if (req.url?.startsWith('/api/read-history?file=') && req.method === 'GET') {
+              const url = new URL(req.url, `http://${req.headers.host}`)
+              const file = url.searchParams.get('file')
+              try {
+                const fullPath = path.resolve(__dirname, 'history', file!)
+                const content = fs.readFileSync(fullPath, 'utf-8')
+                res.setHeader('Content-Type', 'application/json')
+                res.end(JSON.stringify({ content }))
+              } catch (e) {
+                res.statusCode = 500
+                res.end(JSON.stringify({ error: 'Failed to read history file' }))
+              }
+            }
+            else {
+              next()
+            }
+          })
+        }
+      }
+    ]
   }
 })

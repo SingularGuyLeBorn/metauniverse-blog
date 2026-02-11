@@ -24,6 +24,7 @@ export const useLayoutStore = defineStore('layout', () => {
     // 运行时状态 (不持久化)
     const isResizing = ref(false)
     const resizingSide = ref<'left' | 'right' | null>(null)
+    const zenMode = useLocalStorage('mu-layout-zen-mode', false)
 
     // ============ Actions ============
     
@@ -59,6 +60,10 @@ export const useLayoutStore = defineStore('layout', () => {
         resizingSide.value = null
         document.body.style.cursor = ''
         document.body.style.userSelect = ''
+    }
+
+    const toggleZenMode = () => {
+        zenMode.value = !zenMode.value
     }
 
     // ============ CSS 变量同步 ============
@@ -108,6 +113,10 @@ export const useLayoutStore = defineStore('layout', () => {
         MIN_SIDEBAR_WIDTH,
         MAX_SIDEBAR_WIDTH,
         MIN_ASIDE_WIDTH,
-        MAX_ASIDE_WIDTH
+        MAX_ASIDE_WIDTH,
+        
+        // New features
+        zenMode,
+        toggleZenMode
     }
 })

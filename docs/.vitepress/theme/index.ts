@@ -7,6 +7,7 @@ import { useData } from "vitepress";
 // 样式
 import "./style.css";
 import "./styles/reading-mode.css";
+import "./styles/zen-mode.css";
 
 // 状态管理
 import { useAppStore } from "./stores/app";
@@ -42,6 +43,10 @@ import ArticleMetadata from "./components/features/ArticleMetadata.vue";
 import Breadcrumbs from "./components/features/Breadcrumbs.vue";
 import ImageLightbox from "./components/features/ImageLightbox.vue";
 import ImageCaptions from "./components/features/ImageCaptions.vue";
+import ZenModeToggle from "./components/features/ZenModeToggle.vue";
+import LinkPopover from "./components/features/LinkPopover.vue";
+import LiveEditor from "./components/features/LiveEditor.vue";
+import HistoryViewer from "./components/features/HistoryViewer.vue";
 
 // PPO Visualization Components
 import PPOHeader from "./components/features/RL/ppo/components/PPOHeader.vue";
@@ -85,7 +90,11 @@ export default {
           h(SemanticHeatmap),
           h(GlobalLayoutControl), // 全局布局控制器
           h(ImageLightbox), // 图片灯箱
-          h(ImageCaptions) // 图片标题自动生成
+          h(ImageCaptions), // 图片标题自动生成
+          h(ZenModeToggle), // Zen Mode Exit Button
+          h(LinkPopover), // Link Preview Card
+          h(LiveEditor), // Live Markdown Editor
+          h(HistoryViewer) // Version History Viewer
         ]),
 
       // 文档内容后 - 关联笔记引用
@@ -153,6 +162,7 @@ export default {
     // 客户端初始化逻辑
     if (typeof window !== "undefined") {
       const appStore = useAppStore();
+      const layoutStore = useLayoutStore();
 
       // 应用主题到DOM
       watch(
@@ -170,6 +180,15 @@ export default {
           document.documentElement.setAttribute("data-layout", mode);
         },
         { immediate: true },
+      );
+
+      // 监听 Zen Mode
+      watch(
+        () => layoutStore.zenMode,
+        (isZen) => {
+          document.documentElement.classList.toggle("zen-mode", isZen);
+        },
+        { immediate: true }
       );
     }
   },
