@@ -77,6 +77,13 @@ const serializeDOM = (root: Element): string => {
             case 'a': return `[${inner}](${el.getAttribute('href')})`
             case 'img': return `![${el.getAttribute('alt') || ''}](${el.getAttribute('src')})`
             case 'div': return `${inner}\n` // Div often wraps stuff
+            case 'span': 
+                if (el.classList.contains('katex')) {
+                    // This case might be hit if it wasn't replaced by click
+                    const annotation = el.querySelector('annotation[encoding="application/x-tex"]')
+                    if (annotation) return `$${annotation.textContent}$`
+                }
+                return inner
             default: return inner
         }
     }
@@ -204,6 +211,9 @@ const enableContainerEdit = () => {
         
         // Disable links click in edit mode
         container.querySelectorAll('a').forEach(a => a.style.pointerEvents = 'none')
+        
+        // Add formula click listener
+        container.addEventListener('click', handleFormulaClick as any)
     }
 }
 
@@ -213,10 +223,37 @@ const disableContainerEdit = () => {
         (container as HTMLElement).contentEditable = 'false'
         ;(container as HTMLElement).classList.remove('global-editable')
         container.removeEventListener('input', handleContainerInput)
+        container.removeEventListener('click', handleFormulaClick as any)
         
         // Re-enable links
         container.querySelectorAll('a').forEach(a => a.style.pointerEvents = 'auto')
     }
+}
+
+
+// --- Formula Source Editing ---
+const handleFormulaClick = (e: MouseEvent) => {
+    if (!isEditMode.value) return
+    
+    const katexEl = (e.target as HTMLElement).closest('.katex')
+    if (!katexEl) return
+    
+    e.preventDefault()
+    e.stopPropagation()
+    
+    // Find annotation (LaTeX source)
+    const annotation = katexEl.querySelector('annotation[encoding="application/x-tex"]')
+    if (!annotation) return
+    
+    const source = annotation.textContent
+    const isDisplay = katexEl.classList.contains('katex-display')
+    const rawString = isDisplay ? `$$\n${source}\n$$` : `$${source}$`
+    
+    // Create a text node with the source
+    const textNode = document.createTextNode(rawString)
+    katexEl.parentNode?.replaceChild(textNode, katexEl)
+    
+    recordSnapshot()
 }
 
 
