@@ -3,13 +3,18 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { generateFullSidebar } from './utils/sidebar'
+import katex from '@iktakahiro/markdown-it-katex'
 
 // 获取 docs 目录路径
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const docsDir = path.resolve(__dirname, '..')
 
 // 自动生成 sidebar
+// 自动生成 sidebar
 const autoSidebar = generateFullSidebar(docsDir)
+
+// 自定义 Vite 插件：虚拟 Markdown 转换
+// virtualMarkdownPlugin removed (replaced by dynamic routes)
 
 
 export default defineConfig({
@@ -31,7 +36,7 @@ export default defineConfig({
         JSON.parse(fs.readFileSync(path.resolve(__dirname, 'ptx.json'), 'utf-8'))
       ],
       lineNumbers: true, // 显示行号
-      math: true, // 启用数学公式支持
+      math: false, // 禁用自带的 MathJax3，改用 KaTeX 插件
       image: {
         lazyLoading: true // 图片懒加载
       },
@@ -98,6 +103,9 @@ export default defineConfig({
           }
           return defaultFence(tokens, idx, options, env, self)
         }
+
+        // 启用 KaTeX
+        md.use(katex, { strict: false })
       }
     },
     
@@ -262,7 +270,7 @@ export default defineConfig({
     },
     
     ssr: {
-      noExternal: ['flexsearch']
+      noExternal: ['flexsearch', '@iktakahiro/markdown-it-katex']
     },
     
     optimizeDeps: {
@@ -273,7 +281,10 @@ export default defineConfig({
         'flexsearch',
         'fuse.js',
         'lz-string',
-        'mitt'
+        'mitt',
+        'markdown-it',
+        'katex',
+        '@iktakahiro/markdown-it-katex'
       ]
     },
 
@@ -283,25 +294,14 @@ export default defineConfig({
         name: 'markdown-editor-api',
         configureServer(server) {
           server.middlewares.use((req, res, next) => {
-            // 虚拟 Markdown 转换拦截 (影子文件访问)
-            if (req.url && /\.(py|ipynb|pdf|ppt|pptx|doc|docx)\.md$/.test(req.url)) {
-              const baseFile = req.url.replace(/\.md$/, '')
-              const fullPath = path.resolve(__dirname, '..', baseFile.replace(/^\//, ''))
-              if (fs.existsSync(fullPath)) {
-                const ext = path.extname(baseFile).toLowerCase()
-                let content = ''
-                if (ext === '.ipynb') {
-                   try {
-                     const json = JSON.parse(fs.readFileSync(fullPath, 'utf-8'))
-                     content = json.cells?.map((c: any) => c.cell_type === 'markdown' ? c.source.join('') : (c.cell_type === 'code' ? '```python\n' + c.source.join('') + '\n```' : '')).join('\n\n') || ''
-                   } catch(e) { content = 'Error parsing notebook' }
-                } else {
-                   content = `::: code-group\n\n<<< ./${path.basename(baseFile)}{${ext.slice(1)}}\n\n:::`
-                }
-                res.setHeader('Content-Type', 'text/markdown')
-                return res.end(`---\ntitle: ${path.basename(baseFile)}\n---\n\n# ${path.basename(baseFile)}\n\n${content}`)
-              }
+            // 安全限制：仅允许 docs/ 及其子目录
+            const isPathSafe = (p: string) => {
+               const absolute = path.resolve(__dirname, '..', p.replace(/^\//, ''))
+               const docsRoot = path.resolve(__dirname, '..', 'docs')
+               return absolute.startsWith(docsRoot)
             }
+
+            // [移除] 虚拟 Markdown 转换拦截 (影子文件访问) - 已由 virtual-markdown-plugin 接管
 
             // 读取源码原文
             if (req.url?.startsWith('/api/read-md?path=') && req.method === 'GET') {
@@ -312,13 +312,55 @@ export default defineConfig({
                 return res.end('Path missing')
               }
               try {
-                // 自动处理虚拟路径
-                const targetPath = filePath.endsWith('.md') && !fs.existsSync(path.resolve(__dirname, '..', filePath.replace(/^\//, '')))
-                  ? filePath.replace(/\.md$/, '')
-                  : filePath;
-                const fullPath = path.resolve(__dirname, '..', targetPath.replace(/^\//, ''))
+                // 1. 去除 view/ 前缀 (针对虚拟路由)
+                let targetPath = filePath.replace(/^view\//, '').replace(/^\//, '')
+                let fullPath = path.resolve(__dirname, '..', targetPath)
+
+                // 2. 智能文件查找策略
+                if (!fs.existsSync(fullPath)) {
+                  // 尝试 A: 去除 .md 后缀
+                  if (targetPath.endsWith('.md')) {
+                    const noMd = targetPath.replace(/\.md$/, '')
+                    const noMdPath = path.resolve(__dirname, '..', noMd)
+                    if (fs.existsSync(noMdPath)) {
+                       fullPath = noMdPath
+                       targetPath = noMd
+                    } else {
+                       // 尝试 B: 去除 .md 后再尝试添加源码后缀 (.py, .ipynb, .java, etc.)
+                       // 针对 LiveEditor 请求了 .../foo.md 但实际文件是 .../foo.py 的情况
+                       const extensions = ['.py', '.ipynb', '.java', '.cpp', '.ts', '.js', '.go', '.rs', '.c', '.cs']
+                       for (const ext of extensions) {
+                         const withExt = noMdPath + ext
+                         if (fs.existsSync(withExt)) {
+                           fullPath = withExt
+                           targetPath = noMd + ext
+                           break
+                         }
+                       }
+                    }
+                  } 
+                  // 尝试 C: 本身没有后缀，尝试添加后缀
+                  else {
+                     const extensions = ['.py', '.ipynb', '.md', '.java', '.cpp', '.ts', '.js', '.go', '.rs', '.c', '.cs']
+                       for (const ext of extensions) {
+                         const withExt = fullPath + ext
+                         if (fs.existsSync(withExt)) {
+                           fullPath = withExt
+                           targetPath = targetPath + ext
+                           break
+                         }
+                       }
+                  }
+                }
+
+                if (!fs.existsSync(fullPath)) {
+                   res.statusCode = 404
+                   return res.end(JSON.stringify({ error: 'File not found', path: targetPath }))
+                }
+
                 const content = fs.readFileSync(fullPath, 'utf-8')
                 res.setHeader('Content-Type', 'application/json')
+                // isVirtual: 前端路径与物理路径不一致即视为虚拟
                 res.end(JSON.stringify({ content, isVirtual: targetPath !== filePath }))
               } catch (e) {
                 res.statusCode = 500
@@ -332,10 +374,16 @@ export default defineConfig({
               req.on('end', () => {
                 try {
                   const { filePath, content, message } = JSON.parse(body)
-                  const targetPath = filePath.endsWith('.md') && !fs.existsSync(path.resolve(__dirname, '..', filePath.replace(/^\//, '')))
-                    ? filePath.replace(/\.md$/, '')
-                    : filePath;
-                  const fullPath = path.resolve(__dirname, '..', targetPath.replace(/^\//, ''))
+                  
+                  // 1. 去除 view/ 前缀 (针对虚拟路由)
+                  let targetPath = filePath.replace(/^view\//, '').replace(/^\//, '')
+
+                  // 2. 自动处理虚拟路径
+                  if (targetPath.endsWith('.md') && !fs.existsSync(path.resolve(__dirname, '..', targetPath))) {
+                     targetPath = targetPath.replace(/\.md$/, '')
+                  }
+
+                  const fullPath = path.resolve(__dirname, '..', targetPath)
                   
                   // 1. 历史备份
                   const historyDir = path.resolve(__dirname, 'history')
@@ -373,7 +421,14 @@ export default defineConfig({
               req.on('end', () => {
                 try {
                   const { filePath, historyFile } = JSON.parse(body)
-                  const fullPath = path.resolve(__dirname, '..', filePath.replace(/^\//, ''))
+                  
+                  // 去除 view/ 前缀
+                  let targetPath = filePath.replace(/^view\//, '').replace(/^\//, '')
+                  if (targetPath.endsWith('.md') && !fs.existsSync(path.resolve(__dirname, '..', targetPath))) {
+                      targetPath = targetPath.replace(/\.md$/, '')
+                  }
+
+                  const fullPath = path.resolve(__dirname, '..', targetPath)
                   const historyPath = path.resolve(__dirname, 'history', historyFile)
                   
                   if (fs.existsSync(historyPath)) {
@@ -404,31 +459,126 @@ export default defineConfig({
             else if (req.url?.startsWith('/api/list-history?path=') && req.method === 'GET') {
               const url = new URL(req.url, `http://${req.headers.host}`)
               const filePath = url.searchParams.get('path')
-              if (!filePath) {
-                res.statusCode = 400
-                return res.end('Path missing')
-              }
-              try {
-                const historyDir = path.resolve(__dirname, 'history')
-                const fileName = path.basename(filePath, '.md')
-                if (!fs.existsSync(historyDir)) {
-                  return res.end(JSON.stringify({ history: [] }))
-                }
-                const files = fs.readdirSync(historyDir)
-                  .filter(f => f.startsWith(fileName + '_'))
-                  .map(f => ({
-                    name: f,
-                    time: fs.statSync(path.join(historyDir, f)).mtime,
-                    path: `/api/read-history?file=${f}`
-                  }))
-                  .sort((a, b) => b.time.getTime() - a.time.getTime())
+              if (!filePath) return res.end('Path missing')
+              
+              // 去除 view/ 前缀
+              let targetPath = filePath.replace(/^view\//, '').replace(/^\//, '')
+              // 统一去掉可能存在的 .md 后缀 (历史记录按文件名匹配)
+              const baseName = path.basename(targetPath).replace(/\.md$/, '')
+
+              const historyDir = path.resolve(__dirname, 'history')
+              if (!fs.existsSync(historyDir)) return res.end(JSON.stringify({ history: [] }))
+              
+              const files = fs.readdirSync(historyDir)
+                .filter(f => f.startsWith(baseName))
+                .map(f => {
+                    const stat = fs.statSync(path.join(historyDir, f))
+                    return { name: f, time: stat.mtime }
+                })
+                .sort((a, b) => b.time.getTime() - a.time.getTime())
                 
-                res.setHeader('Content-Type', 'application/json')
-                res.end(JSON.stringify({ history: files }))
-              } catch (e) {
-                res.statusCode = 500
-                res.end(JSON.stringify({ error: 'Failed to list history' }))
+              res.setHeader('Content-Type', 'application/json')
+              res.end(JSON.stringify({ history: files }))
+            }
+            // --- 全能文件管理系统 (CRUD) ---
+
+            // 1. 列出目录文件
+            else if (req.url?.startsWith('/api/files/list') && req.method === 'GET') {
+              const url = new URL(req.url, `http://${req.headers.host}`)
+              const dir = url.searchParams.get('dir') || 'docs'
+              if (!isPathSafe(dir)) {
+                res.statusCode = 403; // Forbidden
+                return res.end('Access Denied');
               }
+              const fullPath = path.resolve(__dirname, '..', dir.replace(/^\//, ''))
+              try {
+                const items = fs.readdirSync(fullPath, { withFileTypes: true }).map(it => ({
+                  name: it.name,
+                  isDir: it.isDirectory(),
+                  path: path.join(dir, it.name).replace(/\\/g, '/')
+                }))
+                res.setHeader('Content-Type', 'application/json')
+                res.end(JSON.stringify(items))
+              } catch (e) {
+                res.statusCode = 500;
+                res.end(JSON.stringify({ error: 'Failed to list directory' }));
+              }
+            }
+            // 2. 创建文件/文件夹
+            else if (req.url === '/api/files/create' && req.method === 'POST') {
+              let body = ''
+              req.on('data', c => body += c)
+              req.on('end', () => {
+                try {
+                  const { parentDir, name, isDir } = JSON.parse(body)
+                  const target = path.join(parentDir, name)
+                  if (!isPathSafe(target)) {
+                    res.statusCode = 403;
+                    return res.end('Access Denied');
+                  }
+                  const fullPath = path.resolve(__dirname, '..', target.replace(/^\//, ''))
+                  if (isDir) fs.mkdirSync(fullPath, { recursive: true })
+                  else fs.writeFileSync(fullPath, '')
+                  res.setHeader('Content-Type', 'application/json')
+                  res.end(JSON.stringify({ success: true }))
+                } catch (e) {
+                  res.statusCode = 500;
+                  res.end(JSON.stringify({ error: 'Failed to create file/directory' }));
+                }
+              })
+            }
+            // 3. 删除文件/文件夹
+            else if (req.url === '/api/files/delete' && req.method === 'POST') {
+              let body = ''
+              req.on('data', c => body += c)
+              req.on('end', () => {
+                try {
+                  const { filePath } = JSON.parse(body)
+                  if (!isPathSafe(filePath)) {
+                    res.statusCode = 403;
+                    return res.end('Access Denied');
+                  }
+                  const fullPath = path.resolve(__dirname, '..', filePath.replace(/^\//, ''))
+                  if (fs.existsSync(fullPath)) {
+                     if (fs.statSync(fullPath).isDirectory()) fs.rmSync(fullPath, { recursive: true })
+                     else fs.unlinkSync(fullPath)
+                  }
+                  // Git Commit 删除
+                  import('node:child_process').then(({ execSync }) => {
+                     try { execSync(`git add -A ; git commit -m "Delete: ${filePath}"`) } catch(e){}
+                  })
+                  res.setHeader('Content-Type', 'application/json')
+                  res.end(JSON.stringify({ success: true }))
+                } catch (e) {
+                  res.statusCode = 500;
+                  res.end(JSON.stringify({ error: 'Failed to delete file/directory' }));
+                }
+              })
+            }
+            // 4. 重命名/移动
+            else if (req.url === '/api/files/rename' && req.method === 'POST') {
+               let body = ''
+               req.on('data', c => body += c)
+               req.on('end', () => {
+                 try {
+                   const { oldPath, newPath } = JSON.parse(body)
+                   if (!isPathSafe(oldPath) || !isPathSafe(newPath)) {
+                     res.statusCode = 403;
+                     return res.end('Access Denied');
+                   }
+                   const fullOld = path.resolve(__dirname, '..', oldPath.replace(/^\//, ''))
+                   const fullNew = path.resolve(__dirname, '..', newPath.replace(/^\//, ''))
+                   fs.renameSync(fullOld, fullNew)
+                   import('node:child_process').then(({ execSync }) => {
+                      try { execSync(`git add -A ; git commit -m "Rename: ${oldPath} -> ${newPath}"`) } catch(e){}
+                   })
+                   res.setHeader('Content-Type', 'application/json')
+                   res.end(JSON.stringify({ success: true }))
+                 } catch (e) {
+                   res.statusCode = 500;
+                   res.end(JSON.stringify({ error: 'Failed to rename/move file/directory' }));
+                 }
+               })
             }
             // 读取具体的历史备份内容
             else if (req.url?.startsWith('/api/read-history?file=') && req.method === 'GET') {
@@ -444,12 +594,51 @@ export default defineConfig({
                 res.end(JSON.stringify({ error: 'Failed to read history file' }))
               }
             }
+            // 5. 文件夹历史记录 (Recursive Git Log)
+            else if (req.url?.startsWith('/api/git/log-folder?path=') && req.method === 'GET') {
+              const url = new URL(req.url, `http://${req.headers.host}`)
+              const folderPath = url.searchParams.get('path')
+              if (!folderPath) return res.end('Path missing')
+
+              try {
+                // 安全检查
+                if (!isPathSafe(folderPath)) {
+                    res.statusCode = 403;
+                    return res.end('Access Denied');
+                }
+                
+                const fullPath = path.resolve(__dirname, '..', folderPath.replace(/^\//, ''))
+                
+                // 使用 git log --name-status 递归获取目录下变更
+                import('node:child_process').then(({ execSync }) => {
+                    try {
+                        // 格式: hash|date|author|message
+                        const log = execSync(`git log --pretty=format:"%h|%ad|%an|%s" --date=iso "${fullPath}"`, { encoding: 'utf8' })
+                        
+                        const history = log.split('\n').filter(Boolean).map(line => {
+                            const [hash, date, author, message] = line.split('|')
+                            return { hash, date, author, message }
+                        })
+                        
+                        res.setHeader('Content-Type', 'application/json')
+                        res.end(JSON.stringify({ history }))
+                    } catch (e: any) {
+                        res.statusCode = 500
+                        res.end(JSON.stringify({ error: 'Git log failed: ' + e.message }))
+                    }
+                })
+              } catch (e) {
+                 res.statusCode = 500
+                 res.end(JSON.stringify({ error: 'Failed to read folder history' }))
+              }
+            }
             else {
               next()
             }
           })
         }
-      }
+      },
+// virtualMarkdownPlugin() removed
     ]
   }
 })

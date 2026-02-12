@@ -7,15 +7,17 @@
  * 2. 状态完全由 stores/layout.ts 管理
  * 3. 不包含任何拖拽/Resize 逻辑
  */
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useData } from 'vitepress'
 import { useLayoutStore } from '../../stores/layout'
 import { useAnnotationStore } from '../../stores/annotation'
 import FindInPage from './FindInPage.vue'
+import HistoryViewer from './HistoryViewer.vue'
 
 const layoutStore = useLayoutStore()
 const annotationStore = useAnnotationStore()
 const showFind = ref(false)
+const historyRef = ref<any>(null)
 
 const { page, frontmatter } = useData()
 
@@ -24,6 +26,25 @@ const isDocPage = computed(() => {
   return page.value.relativePath &&
          !page.value.relativePath.endsWith('index.md') &&
          frontmatter.value.layout !== 'home'
+})
+// 键盘监听
+const handleKeyDown = (e: KeyboardEvent) => {
+  if (e.ctrlKey || e.metaKey) {
+    if (e.key === 'z') {
+      e.preventDefault()
+      annotationStore.undo()
+    } else if (e.key === 'y') {
+      e.preventDefault()
+      annotationStore.redo()
+    }
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', handleKeyDown)
+})
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeyDown)
 })
 </script>
 
@@ -66,6 +87,32 @@ const isDocPage = computed(() => {
         >宽</button>
       </div>
 
+      <!-- Undo / Redo -->
+      <div class="edit-history-group">
+        <button 
+          class="btn icon-btn" 
+          @click="annotationStore.undo()" 
+          :disabled="annotationStore.undoStack.length === 0"
+          title="撤回 (Ctrl+Z)"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M9 14L4 9l5-5"/>
+            <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/>
+          </svg>
+        </button>
+        <button 
+          class="btn icon-btn" 
+          @click="annotationStore.redo()" 
+          :disabled="annotationStore.redoStack.length === 0"
+          title="重做 (Ctrl+Y)"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M15 14l5-5-5-5"/>
+            <path d="M20 9H9.5A5.5 5.5 0 0 0 4 14.5v0A5.5 5.5 0 0 0 9.5 20H13"/>
+          </svg>
+        </button>
+      </div>
+
       <!-- 右侧边栏切换 -->
       <button 
         class="btn" 
@@ -89,6 +136,18 @@ const isDocPage = computed(() => {
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
       </button>
 
+      <!-- 本地历史溯源 -->
+      <button 
+        class="btn" 
+        @click="historyRef?.open()" 
+        title="本地历史溯源 (IDE 级版本控制)"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 16 14"/>
+        </svg>
+      </button>
+
       <!-- 查找工具 -->
       <button 
         class="btn" 
@@ -102,12 +161,10 @@ const isDocPage = computed(() => {
         </svg>
       </button>
 
-      <!-- Markup Mode (Annotation) -->
+      <!-- Markup Mode (Annotation) - 暂时占位 -->
       <button 
         class="btn markup-btn" 
-        @click="annotationStore.toggleMarkupMode()" 
-        :class="{ active: annotationStore.isMarkupMode }" 
-        title="批注模式 (Markup Mode)"
+        title="批注模式 (开发中)"
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <path d="M12 19l7-7 3 3-7 7-3-3z"/>
@@ -119,6 +176,7 @@ const isDocPage = computed(() => {
 
     <Teleport to="body">
       <FindInPage v-if="showFind" @close="showFind = false" />
+      <HistoryViewer ref="historyRef" />
     </Teleport>
   </div>
 </template>
@@ -147,6 +205,19 @@ const isDocPage = computed(() => {
 .btn:hover { background: var(--vp-c-bg-soft); color: var(--vp-c-text-1); }
 .btn.active { color: var(--vp-c-brand-1); background: var(--vp-c-bg-soft); }
 .markup-btn.active { color: var(--vp-c-brand-1); background: rgba(var(--vp-c-brand-1-rgb, 107, 114, 255), 0.1); }
+
+.edit-history-group {
+  display: flex;
+  gap: 4px;
+  padding: 2px 4px;
+  border-left: 1px solid var(--vp-c-divider);
+  border-right: 1px solid var(--vp-c-divider);
+}
+
+.icon-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
 
 .width-group {
   display: flex;

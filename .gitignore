@@ -5,3 +5,14 @@ docs/.vitepress/dist
 .DS_Store
 *.log
 *.local
+
+*.py.md
+*.ipynb.md
+*.c.md
+*.cpp.md
+*.java.md
+*.ts.md
+*.js.md
+*.go.md
+*.rs.md
+*.cs.md

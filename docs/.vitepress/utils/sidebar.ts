@@ -20,6 +20,7 @@ export interface SidebarItem {
  * 3. 无内容文件：文件夹仅可折叠/展开，不可点击
  */
 export function generateSidebar(
+  docsDir: string,
   baseDir: string, 
   basePath: string = '',
   depth: number = 0
@@ -40,7 +41,14 @@ export function generateSidebar(
   const directories = entries
     .filter(e => e.isDirectory() && !e.name.startsWith('.') && !excludeDirs.includes(e.name))
   const files = entries
-    .filter(e => e.isFile() && e.name.endsWith('.md') && !e.name.startsWith('.'))
+    .filter(e => {
+      if (e.name.startsWith('.')) return false
+      // Exclude shadow files to prevent duplication (e.g. test.py.md)
+      // We only want the source file (test.py) to generate the sidebar item
+      if (/\.(py|ipynb|java|c|cpp|cs|go|rs|ts|js)\.md$/.test(e.name)) return false
+      
+      return e.name.endsWith('.md') || e.name.endsWith('.py') || e.name.endsWith('.ipynb') || e.name.endsWith('.java') || e.name.endsWith('.ts')
+    })
   
   // 2. 构建 "同名.md" 映射表: folderName -> mdFileEntry
   // 例如: { "rl-math-principle": Entry("rl-math-principle.md") }
@@ -111,7 +119,7 @@ export function generateSidebar(
       }
       
       // 递归处理子项
-      const children = generateSidebar(dirPath, linkPath.slice(0, -1), depth + 1)
+      const children = generateSidebar(docsDir, dirPath, linkPath.slice(0, -1), depth + 1)
       
       // 始终添加文件夹到 sidebar (层级保留)
       const item: SidebarItem = { text: `📁 ${title}` }
@@ -131,24 +139,44 @@ export function generateSidebar(
       items.push(item)
       
     } else {
-      // === 处理独立 .md 文件 ===
+      // === 处理独立文件 ===
       const filePath = path.join(baseDir, nodeName)
-      const linkPath = `${basePath}/${nodeName.replace(/\.md$/, '')}`
+      const isMd = nodeName.endsWith('.md')
+      
+      let linkPath = ''
+      if (isMd) {
+        linkPath = `${basePath}/${nodeName}`.replace(/\.md$/, '')
+      } else {
+        // Shadow file for non-md files
+        // e.g. /knowledge/algo/test.py -> /knowledge/algo/test.py.md
+        const relativePath = path.relative(docsDir, filePath).replace(/\\/g, '/')
+        // Link to the generated .md file
+        linkPath = `/${relativePath}.md`
+      }
       
       let title: string
-      try {
+      if (isMd) {
         const content = fs.readFileSync(filePath, 'utf-8')
         const { data: frontmatter } = matter(content)
         const rawName = nodeName.replace(/\.md$/, '')
         title = frontmatter.title || formatDirName(rawName)
-        
-        // 补全序号
-        const match = nodeName.match(/^(\d+(\.\d+)*\.?\s+)/)
-        if (match && !title.startsWith(match[1].trim()) && !title.startsWith(match[1])) {
-          title = `${match[1]}${title}`
+        try {
+          const content = fs.readFileSync(filePath, 'utf-8')
+          const { data: frontmatter } = matter(content)
+          const rawName = nodeName.replace(/\.md$/, '')
+          title = frontmatter.title || formatDirName(rawName)
+          
+          // 补全序号
+          const match = nodeName.match(/^(\d+(\.\d+)*\.?\s+)/)
+          if (match && !title.startsWith(match[1].trim()) && !title.startsWith(match[1])) {
+            title = `${match[1]}${title}`
+          }
+        } catch {
+          title = formatDirName(nodeName.replace(/\.md$/, ''))
         }
-      } catch {
-        title = formatDirName(nodeName.replace(/\.md$/, ''))
+      } else {
+        // 非 MD 文件使用文件名作为标题
+        title = nodeName
       }
       
       // 文件图标
@@ -242,7 +270,7 @@ export function generateFullSidebar(docsDir: string): Record<string, SidebarItem
   for (const section of sections) {
     const sectionPath = path.join(docsDir, section)
     if (fs.existsSync(sectionPath)) {
-      const items = generateSidebar(sectionPath, `/${section}`)
+      const items = generateSidebar(docsDir, sectionPath, `/${section}`)
       
       // 添加栏目首页链接
       sidebar[`/${section}/`] = [
@@ -272,7 +300,7 @@ export function generateFullSidebar(docsDir: string): Record<string, SidebarItem
       const kbPath = path.join(knowledgeDir, kbName)
       const kbLinkPath = `/knowledge/${kbName}`
       
-      const items = generateSidebar(kbPath, kbLinkPath)
+      const items = generateSidebar(docsDir, kbPath, kbLinkPath)
       
       // 读取知识库标题 (优先级: kbName.md > index.md)
       let title = formatDirName(kbName)

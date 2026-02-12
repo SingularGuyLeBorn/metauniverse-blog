@@ -8,6 +8,7 @@ import { useData } from "vitepress";
 import "./style.css";
 import "./styles/reading-mode.css";
 import "./styles/zen-mode.css";
+import "katex/dist/katex.min.css";
 
 // 状态管理
 import { useAppStore } from "./stores/app";
@@ -47,6 +48,8 @@ import ZenModeToggle from "./components/features/ZenModeToggle.vue";
 import LinkPopover from "./components/features/LinkPopover.vue";
 import LiveEditor from "./components/features/LiveEditor.vue";
 import HistoryViewer from "./components/features/HistoryViewer.vue";
+import FileManager from "./components/features/FileManager.vue";
+import SidebarContextMenu from "./components/features/SidebarContextMenu.vue";
 
 // PPO Visualization Components
 import PPOHeader from "./components/features/RL/ppo/components/PPOHeader.vue";
@@ -94,7 +97,8 @@ export default {
           h(ZenModeToggle), // Zen Mode Exit Button
           h(LinkPopover), // Link Preview Card
           h(LiveEditor), // Live Markdown Editor
-          h(HistoryViewer) // Version History Viewer
+          h(HistoryViewer), // Version History Viewer
+          h(SidebarContextMenu) // Sidebar Context Menu
         ]),
 
       // 文档内容后 - 关联笔记引用
@@ -119,6 +123,10 @@ export default {
     app.component("SegmentAnnotation", SegmentAnnotation);
     app.component("CodeSandbox", CodeSandbox);
     app.component("RAGSearch", RAGSearch);
+    app.component('LiveEditor', LiveEditor)
+    app.component('HistoryViewer', HistoryViewer)
+    app.component('FileManager', FileManager)
+    app.component('SidebarContextMenu', SidebarContextMenu)
     app.component("Mermaid", Mermaid);
     app.component("HomeHero", HomeHero);
     app.component("AboutProfile", AboutProfile);

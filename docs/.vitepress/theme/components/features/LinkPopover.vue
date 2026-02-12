@@ -38,6 +38,9 @@ const handleMouseOver = (e: MouseEvent) => {
     }
     return
   }
+  
+  // 忽略侧边栏、导航栏中的链接
+  if (target.closest('.VPSidebar') || target.closest('.VPNav') || target.closest('.VPLocalNav')) return
 
   // 检查是否是内部链接
   const href = target.getAttribute('href')
