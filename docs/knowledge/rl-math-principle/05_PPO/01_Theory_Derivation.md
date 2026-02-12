@@ -2,7 +2,7 @@
 
 **论文信息**：
 - **标题**：Proximal Policy Optimization Algorithms
-- **作者**：John Schulman, Filip Wolski, Prafulla Dhariwal, Alec Radford, Oleg Klimov ~~(OpenAI)~~
+- **作者**：John Schulman, Filip Wolski, Prafulla Dhariwal, Alec Radford, Oleg Klimov (OpenAI)
 - **年份**：2017
 - **arXiv**：1707.06347
 - **PDF**：见 `papers/` 目录
