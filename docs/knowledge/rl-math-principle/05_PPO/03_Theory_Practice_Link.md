@@ -8,7 +8,7 @@
 
 **公式**：
 
-$ r_t(\theta) = \frac{\pi_\theta(a_t|s_t)}{\pi_{\theta_{\text{old}}}(a_t|s_t)} $
+$r_t(\theta) = \frac{\pi_\theta(a_t|s_t)}{\pi_{\theta_{\text{old}}}(a_t|s_t)} $
 
 **代码实现** (02_Implementation.py 第305-310行):
 
@@ -33,7 +33,7 @@ ratio = torch.exp(new_log_probs - old_log_probs)
 
 **公式**：
 
-$ L^{CLIP} = \mathbb{E}_t\left[\min(r_t A_t, \text{clip}(r_t, 1-\epsilon, 1+\epsilon) A_t)\right] $
+$L^{CLIP} = \mathbb{E}_t\left[\min(r_t A_t, \text{clip}(r_t, 1-\epsilon, 1+\epsilon) A_t)\right] $
 
 **代码实现**:
 
@@ -68,13 +68,13 @@ def compute_ppo_loss(old_log_probs, new_log_probs, advantages, clip_epsilon):
 
 **公式**：
 
-$ \hat{A}_t = \sum^{\infty}_{k=0} (\gamma\lambda)^k \delta_{t+k} $
+$\hat{A}*t = \sum*^{\infty} (\gamma\lambda)^k \delta_{t+k} $
 
-其中 $ \delta_t = r_t + \gamma V(s_{t+1}) - V(s_t) $ (TD误差)
+其中 $\delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)$ (TD误差)
 
 **递归形式**:
 
-$ \hat{A}_t = \delta_t + \gamma\lambda \hat{A}_{t+1} $
+$\hat{A}*t = \delta_t + \gamma\lambda \hat{A}* $
 
 **代码实现** (RolloutBuffer.compute_returns_and_advantages):
 
@@ -233,7 +233,7 @@ def linear_schedule(initial_lr):
 
 **公式**：
 
-$ L = L^{CLIP} + c_1 L^{VF} - c_2 S[\pi_\theta] $
+$L = L^{CLIP} + c_1 L^{VF} - c_2 S[\pi_\theta] $
 
 **代码**：
 
@@ -309,7 +309,17 @@ PPO-Clip更简单且效果相当，所以更常用。
 
 RLHF中通常添加KL惩罚：
 
-$ \text{reward} = \text{reward\_model}(\text{response}) - \beta \cdot KL(\pi_\theta \| \pi_{\text{ref}}) $
+python
+
+
+```
+reward = reward_model(response) - β * KL(π_θ || π_ref)
+```
+1
+
+1
+
+1
 
 这防止模型偏离初始SFT模型太远。
 
