@@ -16,11 +16,12 @@ const showToolbar = ref(false)
 const selectedText = ref('')
 const selectedContext = ref({ prefix: '', suffix: '' })
 
-// Block Editor
+// Block Editor (Overlay)
 const showBlockEditor = ref(false)
-const blockEditorType = ref<'math' | 'code'>('math')
-const blockSource = ref('')
-const blockTargetNode = ref<HTMLElement | null>(null)
+const formulaEditingSource = ref('')
+const formulaEditingDisplay = ref(false)
+const formulaEditingTarget = ref<HTMLElement | null>(null)
+const formulaPreviewHtml = ref('')
 
 // History & Editing
 const isEditMode = ref(false)
@@ -79,9 +80,11 @@ const serializeDOM = (root: Element): string => {
             case 'div': return `${inner}\n` // Div often wraps stuff
             case 'span': 
                 if (el.classList.contains('katex')) {
-                    // This case might be hit if it wasn't replaced by click
                     const annotation = el.querySelector('annotation[encoding="application/x-tex"]')
-                    if (annotation) return `$${annotation.textContent}$`
+                    const isDisplay = el.classList.contains('katex-display') || (el.parentNode as HTMLElement)?.classList.contains('katex-display')
+                    if (annotation) {
+                        return isDisplay ? `$$\n${annotation.textContent}\n$$` : `$${annotation.textContent}$`
+                    }
                 }
                 return inner
             default: return inner
@@ -231,7 +234,15 @@ const disableContainerEdit = () => {
 }
 
 
-// --- Formula Source Editing ---
+// --- Formula Overlay Editor Logic ---
+watch(formulaEditingSource, (val) => {
+    try {
+        formulaPreviewHtml.value = mdBlock.render(formulaEditingDisplay.value ? `$$\n${val}\n$$` : `$${val}$`)
+    } catch (e) {
+        formulaPreviewHtml.value = '<span style="color:red">渲染错误</span>'
+    }
+})
+
 const handleFormulaClick = (e: MouseEvent) => {
     if (!isEditMode.value) return
     
@@ -241,19 +252,36 @@ const handleFormulaClick = (e: MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
     
-    // Find annotation (LaTeX source)
+    formulaEditingTarget.value = katexEl as HTMLElement
     const annotation = katexEl.querySelector('annotation[encoding="application/x-tex"]')
-    if (!annotation) return
+    if (annotation) {
+        formulaEditingSource.value = annotation.textContent || ''
+        formulaEditingDisplay.value = katexEl.classList.contains('katex-display') || 
+                                     (katexEl.parentNode as HTMLElement)?.classList.contains('katex-display')
+        showBlockEditor.value = true
+    }
+}
+
+const saveFormula = () => {
+    if (!formulaEditingTarget.value) return
     
-    const source = annotation.textContent
-    const isDisplay = katexEl.classList.contains('katex-display')
-    const rawString = isDisplay ? `$$\n${source}\n$$` : `$${source}$`
+    // Create new rendered HTML based on input
+    const newHtml = mdBlock.render(formulaEditingDisplay.value ? `$$\n${formulaEditingSource.value}\n$$` : `$${formulaEditingSource.value}$`)
     
-    // Create a text node with the source
-    const textNode = document.createTextNode(rawString)
-    katexEl.parentNode?.replaceChild(textNode, katexEl)
+    // Create a temporary container to extract the actual .katex node
+    const temp = document.createElement('div')
+    temp.innerHTML = newHtml
+    const newNode = temp.querySelector('.katex')
     
-    recordSnapshot()
+    if (newNode) {
+        formulaEditingTarget.value.parentNode?.replaceChild(newNode, formulaEditingTarget.value)
+        showBlockEditor.value = false
+        recordSnapshot()
+    }
+}
+
+const closeFormulaEditor = () => {
+    showBlockEditor.value = false
 }
 
 
@@ -369,10 +397,42 @@ watch(() => page.value.relativePath, () => {
             </div>
         </Teleport>
 
-        <!-- Tooltip Toolbar (Only for Read Mode or Selection) -->
-        <div v-if="showToolbar && !isEditMode" class="editor-toolbar" :style="{ left: `${toolbarPos.x}px`, top: `${toolbarPos.y}px` }">
-             <!-- ... buttons ... -->
-        </div>
+        <!-- Formula Overlay Editor -->
+        <Teleport to="body">
+            <Transition name="fade">
+                <div v-if="showBlockEditor" class="formula-overlay">
+                    <div class="formula-modal">
+                        <div class="modal-header">
+                            <h3>编辑数学公式</h3>
+                            <button @click="closeFormulaEditor" class="close-btn">×</button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="edit-pane">
+                                <label>LaTeX 源码</label>
+                                <textarea 
+                                    v-model="formulaEditingSource" 
+                                    placeholder="输入 LaTeX 源码..."
+                                    spellcheck="false"
+                                ></textarea>
+                                <div class="options">
+                                    <label>
+                                        <input type="checkbox" v-model="formulaEditingDisplay"> 块级显示 ($$)
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="preview-pane">
+                                <label>实时预览</label>
+                                <div class="math-preview" v-html="formulaPreviewHtml"></div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button @click="closeFormulaEditor" class="cancel-btn">取消</button>
+                            <button @click="saveFormula" class="save-btn">确认修改</button>
+                        </div>
+                    </div>
+                </div>
+            </Transition>
+        </Teleport>
     </div>
 </template>
 
@@ -409,7 +469,81 @@ watch(() => page.value.relativePath, () => {
     outline: none;
     caret-color: var(--vp-c-brand);
 }
-:global(.global-editable p), :global(.global-editable h1), :global(.global-editable h2), :global(.global-editable li) {
-    /* Visual hints if needed */
+
+/* Formula Overlay Styles */
+.formula-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    z-index: 3000;
+    display: flex; align-items: center; justify-content: center;
 }
+
+.formula-modal {
+    background: var(--vp-c-bg);
+    border: 1px solid var(--vp-c-divider);
+    border-radius: 12px;
+    width: 800px; max-width: 90vw;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+    display: flex; flex-direction: column;
+}
+
+.modal-header {
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--vp-c-divider);
+    display: flex; justify-content: space-between; align-items: center;
+}
+.modal-header h3 { margin: 0; font-size: 16px; }
+.close-btn { font-size: 24px; background: none; border: none; cursor: pointer; color: var(--vp-c-text-2); }
+
+.modal-body {
+    padding: 20px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.edit-pane, .preview-pane { display: flex; flex-direction: column; gap: 8px; }
+.edit-pane label, .preview-pane label { font-size: 12px; color: var(--vp-c-text-2); font-weight: 600; }
+
+textarea {
+    flex: 1; height: 180px;
+    background: var(--vp-c-bg-soft);
+    border: 1px solid var(--vp-c-divider);
+    border-radius: 6px;
+    padding: 12px;
+    font-family: var(--vp-font-family-mono);
+    font-size: 14px;
+    resize: none;
+    outline: none;
+    color: var(--vp-c-text-1);
+}
+textarea:focus { border-color: var(--vp-c-brand); }
+
+.math-preview {
+    flex: 1; height: 180px;
+    background: var(--vp-c-bg-alt);
+    border: 1px solid var(--vp-c-divider);
+    border-radius: 6px;
+    padding: 12px;
+    overflow: auto;
+    display: flex; align-items: center; justify-content: center;
+}
+
+.modal-footer {
+    padding: 16px 20px;
+    border-top: 1px solid var(--vp-c-divider);
+    display: flex; justify-content: flex-end; gap: 12px;
+}
+
+.cancel-btn, .save-btn {
+    padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.cancel-btn { background: transparent; border: 1px solid var(--vp-c-divider); color: var(--vp-c-text-1); }
+.save-btn { background: var(--vp-c-brand); border: 1px solid var(--vp-c-brand); color: white; }
+.save-btn:hover { opacity: 0.9; }
+
+/* Animations */
+.fade-enter-active, .fade-leave-active { transition: opacity 0.2s; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
 </style>
