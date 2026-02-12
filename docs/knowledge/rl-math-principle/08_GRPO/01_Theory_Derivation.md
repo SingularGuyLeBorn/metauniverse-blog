@@ -1,7 +1,7 @@
 # 第8章：组相对策略优化 (Group Relative Policy Optimization, GRPO)
 
 **论文信息**：
-- **标题**：DeepSeekMath: Pushing the Limits of Mathematical Reasoning in Open Language 
+- **标题**：DeepSeekMath: Pushing the Limits of Mathematical Reasoning in Open Language Models
 - **作者**：Zhihong Shao et al. (DeepSeek)
 - **年份**：2024
 - **arXiv**：2402.03300
