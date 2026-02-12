@@ -2,7 +2,7 @@
 
 **论文信息**：
 - **标题**：Proximal Policy Optimization Algorithms
-- **作者**：John Schulman, Filip Wolski, Prafulla Dhariwal, Alec Radford, Oleg Klimov ****<u> ~~(OpenAI)~~</u>****
+- **作者**：John Schulman, Filip Wolski, Prafulla Dhariwal, Alec Radford, Oleg Klimov ****<u> ~~~~</u>****
 - **年份**：2017
 - **arXiv**：1707.06347
 - **PDF**：见 `papers/` 目录
@@ -377,7 +377,7 @@ $$\text{clip}(r, 1-\epsilon, 1+\epsilon) = \begin{cases} 1-\epsilon & \text{if }
 |------|------|--------|----------|
 | 裁剪系数 | $\epsilon$ | 0.1~0.2 | **控制策略更新范围，越小越保守** |
 | 折扣因子 | $\gamma$ | 0.99 | 控制未来奖励的权重，越大越重视长期 |
-| GAE参数 | $\lambda$ | 0.95 | 偏差-方差权衡，越大方差越大但���差越小 |
+| GAE参数 | $\lambda$ | 0.95 | 偏差-方差权衡，越大方差越大但偏差越小 |
 | 优化轮数 | $K$ | 3~10 | 每批数据的复用次数，太多可能过拟合 |
 | 价值系数 | $c_1$ | 0.5 | 价值损失的权重，平衡策略和价值学习 |
 | 熵系数 | $c_2$ | 0.01 | **熵正则化的权重，鼓励探索** |
