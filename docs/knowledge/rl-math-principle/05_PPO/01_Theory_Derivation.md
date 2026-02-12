@@ -1,4 +1,4 @@
-# 第5章：近端策略优化 (Proximal Policy Optimization, PPO) [​](#第5章-近端策略优化-proximal-policy-optimization-ppo) [​](#第5章-近端策略优化-proximal-policy-optimization-ppo-​)
+# 第5章：近端策略优化 (Proximal Policy Optimization, PPO) [​](#第5章-近端策略优化-proximal-policy-optimization-ppo) [​](#第5章-近端策略优化-proximal-policy-optimization-ppo-​) [​](#第5章-近端策略优化-proximal-policy-optimization-ppo-​-​)
 
 **论文信息**：
 
@@ -8,9 +8,9 @@
 - **arXiv**：1707.06347
 - **PDF**：见 papers/ 目录
 
-**前置知识**：策略梯度定理（第2章）、REINFORCE（第3章）
+**前置知识**：策略梯度定理（第2章）、REINFORCE（第3章）0. 本章目标 [​](#_0-本章目标) [​](#_0-本章目标-​)
 
-## 0. 本章目标 [​](#_0-本章目标) [​](#_0-本章目标-​)
+## [​](#_0-本章目标-​-​)
 
 PPO是**现代深度强化学习的标准算法**，被广泛应用于：
 
@@ -27,9 +27,9 @@ PPO是**现代深度强化学习的标准算法**，被广泛应用于：
 - 解释裁剪机制的直观含义和数学意义
 - 介绍完整的PPO算法流程
 
-## 1. REINFORCE和TRPO的问题 [​](#_1-reinforce和trpo的问题) [​](#_1-reinforce和trpo的问题-​)
+## 1. REINFORCE和TRPO的问题 [​](#_1-reinforce和trpo的问题) [​](#_1-reinforce和trpo的问题-​) [​](#_1-reinforce和trpo的问题-​-​)
 
-### 1.1 REINFORCE的问题回顾 [​](#_1-1-reinforce的问题回顾) [​](#_1-1-reinforce的问题回顾-​)
+### 1.1 REINFORCE的问题回顾 [​](#_1-1-reinforce的问题回顾) [​](#_1-1-reinforce的问题回顾-​) [​](#_1-1-reinforce的问题回顾-​-​)
 
 回忆第3章，REINFORCE的更新规则是：
 
@@ -50,7 +50,7 @@ PPO是**现代深度强化学习的标准算法**，被广泛应用于：
 - 步长太大 → 策略可能"跳"得太远，性能突然崩溃
 - 步长太小 → 学习太慢
 
-### 1.2 TRPO：一种解决方案 [​](#_1-2-trpo-一种解决方案) [​](#_1-2-trpo-一种解决方案-​)
+### 1.2 TRPO：一种解决方案 [​](#_1-2-trpo-一种解决方案) [​](#_1-2-trpo-一种解决方案-​) [​](#_1-2-trpo-一种解决方案-​-​)
 
 **信任区域策略优化 (Trust Region Policy Optimization, TRPO)** 通过限制策略更新的幅度来保证单调改进。
 
@@ -68,15 +68,15 @@ s.t.DKL(πθold(⋅∣s)∥πθ(⋅∣s))≤δ\text{s.t.} \quad D_{KL}\left(\pi_
 - 实现复杂（共轭梯度、线搜索等）
 - 计算代价高
 
-### 1.3 PPO的动机 [​](#_1-3-ppo的动机) [​](#_1-3-ppo的动机-​)
+### 1.3 PPO的动机 [​](#_1-3-ppo的动机) [​](#_1-3-ppo的动机-​) [​](#_1-3-ppo的动机-​-​)
 
 > **PPO的核心思想**：用简单的**裁剪 (Clipping)** 机制替代TRPO的KL约束，获得类似的效果但实现更简单。
 
 
 
-## 2. 重要性采样 (Importance Sampling) [​](#_2-重要性采样-importance-sampling) [​](#_2-重要性采样-importance-sampling-​)
+## 2. 重要性采样 (Importance Sampling) [​](#_2-重要性采样-importance-sampling) [​](#_2-重要性采样-importance-sampling-​) [​](#_2-重要性采样-importance-sampling-​-​)
 
-### 2.1 动机：复用旧数据 [​](#_2-1-动机-复用旧数据) [​](#_2-1-动机-复用旧数据-​)
+### 2.1 动机：复用旧数据 [​](#_2-1-动机-复用旧数据) [​](#_2-1-动机-复用旧数据-​) [​](#_2-1-动机-复用旧数据-​-​)
 
 我们想用旧策略 πθold\pi_{\theta_{\text{old}}}πθold​​ 采集的数据来更新新策略 πθ\pi_\thetaπθ​。
 
@@ -84,7 +84,7 @@ s.t.DKL(πθold(⋅∣s)∥πθ(⋅∣s))≤δ\text{s.t.} \quad D_{KL}\left(\pi_
 
 **解决方案**：重要性采样。
 
-### 2.2 重要性采样的数学原理 [​](#_2-2-重要性采样的数学原理) [​](#_2-2-重要性采样的数学原理-​)
+### 2.2 重要性采样的数学原理 [​](#_2-2-重要性采样的数学原理) [​](#_2-2-重要性采样的数学原理-​) [​](#_2-2-重要性采样的数学原理-​-​)
 
 **基本定理**：如果我们想计算关于分布 ppp 的期望，但只能从分布 qqq 采样，可以使用：
 
@@ -102,7 +102,7 @@ Ex∼p[f(x)]=∫p(x)f(x)dx\mathbb{E}_{x \sim p}[f(x)] = \int p(x) f(x) dx Ex∼p
 
 **关键**：p(x)q(x)\frac{p(x)}{q(x)}q(x)p(x)​ 称为**重要性权重 (Importance Weight)**。
 
-### 2.3 应用到策略梯度 [​](#_2-3-应用到策略梯度) [​](#_2-3-应用到策略梯度-​)
+### 2.3 应用到策略梯度 [​](#_2-3-应用到策略梯度) [​](#_2-3-应用到策略梯度-​) [​](#_2-3-应用到策略梯度-​-​)
 
 在策略梯度中：
 
@@ -123,7 +123,7 @@ rt(θ)=πθ(at∣st)πθold(at∣st)r_t(\theta) = \frac{\pi_\theta(a_t|s_t)}{\pi
 
 J(θ)=Et[rt(θ)At]J(\theta) = \mathbb{E}_t\left[r_t(\theta) A_t\right] J(θ)=Et​[rt​(θ)At​]
 
-### 2.4 重要性权重的问题 [​](#_2-4-重要性权重的问题) [​](#_2-4-重要性权重的问题-​)
+### 2.4 重要性权重的问题 [​](#_2-4-重要性权重的问题) [​](#_2-4-重要性权重的问题-​) [​](#_2-4-重要性权重的问题-​-​)
 
 **问题**：当 πθ\pi_\thetaπθ​ 和 πθold\pi_{\theta_{\text{old}}}πθold​​ 差异很大时，rt(θ)r_t(\theta)rt​(θ) 可能变得非常大或非常小，导致：
 
@@ -132,9 +132,9 @@ J(θ)=Et[rt(θ)At]J(\theta) = \mathbb{E}_t\left[r_t(\theta) A_t\right] J(θ)=Et�
 
 **这就是PPO裁剪机制要解决的问题**。
 
-## 3. PPO-Clip目标函数 [​](#_3-ppo-clip目标函数) [​](#_3-ppo-clip目标函数-​)
+## 3. PPO-Clip目标函数 [​](#_3-ppo-clip目标函数) [​](#_3-ppo-clip目标函数-​) [​](#_3-ppo-clip目标函数-​-​)
 
-### 3.1 核心公式 [​](#_3-1-核心公式) [​](#_3-1-核心公式-​)
+### 3.1 核心公式 [​](#_3-1-核心公式) [​](#_3-1-核心公式-​) [​](#_3-1-核心公式-​-​)
 
 PPO的核心创新是**裁剪的代理目标 (Clipped Surrogate Objective)**：
 
@@ -151,7 +151,6 @@ clip(r,1−ϵ,1+ϵ)={1−ϵif r<1−ϵrif 1−ϵ≤r≤1+ϵ1+ϵif r>1+ϵ\text
 条件输出含义r<1−ϵr < 1-\epsilonr<1−ϵ1−ϵ1-\epsilon1−ϵ概率比过小，**截断到下界**1−ϵ≤r≤1+ϵ1-\epsilon \leq r \leq 1+\epsilon1−ϵ≤r≤1+ϵrrr概率比在安全范围，**保持不变**r>1+ϵr > 1+\epsilonr>1+ϵ1+ϵ1+\epsilon1+ϵ概率比过大，**截断到上界**### 图解：PPO裁剪目标函数 [​](#图解-ppo裁剪目标函数)
 
 ![PPO裁剪目标函数](/knowledge/rl-math-principle/05_PPO/images/clipping_objective.png)PPO裁剪目标函数
-
 
 **图片详细说明**：
 
@@ -238,7 +237,7 @@ clip(r,1−ϵ,1+ϵ)={1−ϵif r<1−ϵrif 1−ϵ≤r≤1+ϵ1+ϵif r>1+ϵ\text
 - 保证新策略不会偏离旧策略太远
 - 实现了与TRPO类似的"信任区域"效果，但计算更简单
 
-### 3.3 为什么用min而不是直接clip？ [​](#_3-3-为什么用min而不是直接clip) [​](#_3-3-为什么用min而不是直接clip-​)
+### 3.3 为什么用min而不是直接clip？ [​](#_3-3-为什么用min而不是直接clip) [​](#_3-3-为什么用min而不是直接clip-​) [​](#_3-3-为什么用min而不是直接clip-​-​)
 
 **关键洞察**：min⁡\minmin 的作用取决于 AtA_tAt​ 的符号。
 
@@ -262,10 +261,9 @@ clip(r,1−ϵ,1+ϵ)={1−ϵif r<1−ϵrif 1−ϵ≤r≤1+ϵ1+ϵif r>1+ϵ\text
 
 **总结**：无论 AtA_tAt​ 正负，min⁡\minmin 都起到"保守更新"的作用。
 
-### 图解：PPO信任区域视角 [​](#图解-ppo信任区域视角) [​](#图解-ppo信任区域视角-​)
+### 图解：PPO信任区域视角 [​](#图解-ppo信任区域视角) [​](#图解-ppo信任区域视角-​) [​](#图解-ppo信任区域视角-​-​)
 
 ![PPO信任区域](/knowledge/rl-math-principle/05_PPO/images/trust_region.png)PPO信任区域
-
 
 **图片详细说明**：
 
@@ -325,9 +323,9 @@ clip(r,1−ϵ,1+ϵ)={1−ϵif r<1−ϵrif 1−ϵ≤r≤1+ϵ1+ϵif r>1+ϵ\text
 - PPO通过裁剪 r∈[1−ϵ,1+ϵ]r \in [1-\epsilon, 1+\epsilon]r∈[1−ϵ,1+ϵ] 隐式实现类似效果
 - 两者目标相同：防止策略剧烈变化导致性能崩溃
 
-## 4. 完整的PPO算法 [​](#_4-完整的ppo算法) [​](#_4-完整的ppo算法-​)
+## 4. 完整的PPO算法 [​](#_4-完整的ppo算法) [​](#_4-完整的ppo算法-​) [​](#_4-完整的ppo算法-​-​)
 
-### 4.1 PPO-Clip伪代码 [​](#_4-1-ppo-clip伪代码) [​](#_4-1-ppo-clip伪代码-​)
+### 4.1 PPO-Clip伪代码 [​](#_4-1-ppo-clip伪代码) [​](#_4-1-ppo-clip伪代码-​) [​](#_4-1-ppo-clip伪代码-​-​)
 
 
 ```
@@ -373,11 +371,13 @@ clip(r,1−ϵ,1+ϵ)={1−ϵif r<1−ϵrif 1−ϵ≤r≤1+ϵ1+ϵif r>1+ϵ\text
 
 12345678910111213141516171819202122232425262728293031323334353637
 
-### 4.2 关键超参数详解 [​](#_4-2-关键超参数详解) [​](#_4-2-关键超参数详解-​)
+12345678910111213141516171819202122232425262728293031323334353637
+
+### 4.2 关键超参数详解 [​](#_4-2-关键超参数详解) [​](#_4-2-关键超参数详解-​) [​](#_4-2-关键超参数详解-​-​)
 
 参数符号典型值含义与作用裁剪系数ϵ\epsilonϵ0.1~0.2**控制策略更新范围，越小越保守**折扣因子γ\gammaγ0.99控制未来奖励的权重，越大越重视长期GAE参数λ\lambdaλ0.95偏差-方差权衡，越大方差越大但偏差越小优化轮数KKK3~10每批数据的复用次数，太多可能过拟合价值系数c1c_1c1​0.5价值损失的权重，平衡策略和价值学习熵系数c2c_2c2​0.01**熵正则化的权重，鼓励探索**## 5. 本章总结 [​](#_5-本章总结)
 
-### 5.1 核心公式汇总 [​](#_5-1-核心公式汇总) [​](#_5-1-核心公式汇总-​)
+### 5.1 核心公式汇总 [​](#_5-1-核心公式汇总) [​](#_5-1-核心公式汇总-​) [​](#_5-1-核心公式汇总-​-​)
 
 概念公式关键符号说明概率比rt(θ)=πθ(at∣st)πθold(at∣st)r_t(\theta) = \frac{\pi_\theta(a_t|s_t)}{\pi_{\theta_{\text{old}}}(a_t|s_t)}rt​(θ)=πθold​​(at​∣st​)πθ​(at​∣st​)​πθ\pi_\thetaπθ​=新策略，πold\pi_{\text{old}}πold​=旧策略PPO-ClipL=E[min⁡(rtAt,clip(rt,1±ϵ)At)]L = \mathbb{E}[\min(r_t A_t, \text{clip}(r_t, 1\pm\epsilon) A_t)]L=E[min(rt​At​,clip(rt​,1±ϵ)At​)]ϵ\epsilonϵ=裁剪范围，AtA_tAt​=优势重要性采样Ep[f]=Eq[pqf]\mathbb{E}*{p}[f] = \mathbb{E}*[\frac{p}{q} f]Ep​[f]=Eq​[qp​f]pq\frac{p}{q}qp​=重要性权重### 5.2 PPO的贡献 [​](#_5-2-ppo的贡献)
 
@@ -386,14 +386,14 @@ clip(r,1−ϵ,1+ϵ)={1−ϵif r<1−ϵrif 1−ϵ≤r≤1+ϵ1+ϵif r>1+ϵ\text
 - **样本高效**：可以多次复用同一批数据
 - **广泛适用**：从游戏到机器人到LLM
 
-## 6. 开源实现参考 [​](#_6-开源实现参考) [​](#_6-开源实现参考-​)
+## 6. 开源实现参考 [​](#_6-开源实现参考) [​](#_6-开源实现参考-​) [​](#_6-开源实现参考-​-​)
 
-### 6.1 官方实现 [​](#_6-1-官方实现) [​](#_6-1-官方实现-​)
+### 6.1 官方实现 [​](#_6-1-官方实现) [​](#_6-1-官方实现-​) [​](#_6-1-官方实现-​-​)
 
 - **OpenAI Baselines**: [https://github.com/openai/baselines](https://github.com/openai/baselines)
 - **Spinning Up**: [https://spinningup.openai.com/](https://spinningup.openai.com/)
 
-### 6.2 常用库 [​](#_6-2-常用库) [​](#_6-2-常用库-​)
+### 6.2 常用库 [​](#_6-2-常用库) [​](#_6-2-常用库-​) [​](#_6-2-常用库-​-​)
 
 - **Stable-Baselines3**: [https://github.com/DLR-RM/stable-baselines3](https://github.com/DLR-RM/stable-baselines3)
 - **TRL (Transformer RL)**: [https://github.com/huggingface/trl](https://github.com/huggingface/trl)
