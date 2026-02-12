@@ -42,7 +42,7 @@ $$\theta \leftarrow \theta + \alpha \nabla_\theta \log \pi_\theta(a|s) \cdot G_t
 | $\theta$ | 参数 | 向量 | 策略网络的参数 |
 | $\alpha$ | 学习率 | 标量 | 控制更新步长 |
 | $\nabla_\theta$ | 梯度 | 算子 | 计算损失对参数的偏导 |
-| $\pi_\theta(a|s)$ | 策略概率 | 标量 | 在状态 $s$ 下选择动作 $a$ 的概率 |
+| $\pi_\theta(a \vert s)$ | 策略概率 | 标量 | 在状态 $s$ 下选择动作 $a$ 的概率 |
 | $G_t$ | 累计回报 | 标量 | $G_t = \sum_{k=0}^{\infty} \gamma^k r_{t+k}$ |
 
 **问题1：On-Policy限制**
@@ -66,13 +66,13 @@ TRPO的优化问题：
 
 $$\max_\theta \quad \mathbb{E}_{s \sim \rho^{\pi_{\text{old}}}} \left[ \frac{\pi_\theta(a|s)}{\pi_{\theta_{\text{old}}}(a|s)} A^{\pi_{\text{old}}}(s, a) \right]$$
 
-$$\text{s.t.} \quad D_{KL}\left(\pi_{\theta_{\text{old}}}(\cdot|s) \| \pi_\theta(\cdot|s)\right) \leq \delta$$
+$$\text{s.t.} \quad D_{KL}\left(\pi_{\theta_{\text{old}}}(\cdot \vert s) \| \pi_\theta(\cdot \vert s)\right) \leq \delta$$
 
 **公式各项详解**：
 
 | 符号 | 含义 | 说明 |
 | :--- | :--- | :--- |
-| $\frac{\pi_\theta(a|s)}{\pi_{\theta_{\text{old}}}(a|s)}$ | 概率比率 | 衡量新旧策略差异 |
+| $\frac{\pi_\theta(a \vert s)}{\pi_{\theta_{\text{old}}}(a \vert s)}$ | 概率比率 | 衡量新旧策略差异 |
 | $A^{\pi_{\text{old}}}(s, a)$ | 优势函数 | $A = Q(s,a) - V(s)$ |
 | $D_{KL}$ | KL 散度 | 衡量两个概率分布的差异 |
 | $\delta$ | 信任区域半径 | 控制更新幅度 |
@@ -142,7 +142,7 @@ $$J(\theta) = \mathbb{E}_t\left[r_t(\theta) A_t\right]$$
 
 ### 3.1 核心公式
 
-$$L^{CLIP}(\theta) = \mathbb{E}_t\left[\min\left(r_t(\theta) A_t, \text{clip}(r_t(\theta), 1-\epsilon, 1+ϵ) A_t\right)\right]$$
+$$L^{CLIP}(\theta) = \mathbb{E}_t\left[\min\left(r_t(\theta) A_t, \text{clip}(r_t(\theta), 1-\epsilon, 1+\epsilon) A_t\right)\right]$$
 
 **公式各项详解**：
 
@@ -185,7 +185,7 @@ $$\text{clip}(r, 1-\epsilon, 1+\epsilon) = \begin{cases} 1-\epsilon & \text{if }
 
 1. 初始化策略网络 π_θ 和价值网络 V_φ
 2. 重复迭代：
-   a. 使用旧策略采 集 T 步轨迹数据
+   a. 使用旧策略采样获得 T 步轨迹数据
    b. 计算优势函数 Â_t (通常用 GAE)
    c. 通过优化 L_clip + L_V - L_entropy 更新参数
    d. 更新旧策略参数 θ_old ← θ
@@ -205,7 +205,7 @@ $$\text{clip}(r, 1-\epsilon, 1+\epsilon) = \begin{cases} 1-\epsilon & \text{if }
 
 | 概念 | 公式 | 说明 |
 | :--- | :--- | :--- |
-| 概率比 | $r_t(\theta) = \frac{\pi_\theta}{\pi_{old}}$ | 衡量策略变更 |
+| 概率比 | $r_t(\theta) = \frac{\pi_\theta}{\pi_{\text{old}}}$ | 衡量策略变更 |
 | PPO-Clip | $L = \mathbb{E}[\min(r_t A_t, \text{clip} \cdot A_t)]$ | 保护性更新 |
 
 ### 5.2 PPO的贡献
