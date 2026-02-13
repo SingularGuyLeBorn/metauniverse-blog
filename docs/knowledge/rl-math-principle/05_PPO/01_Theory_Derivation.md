@@ -175,10 +175,9 @@ PPO裁剪目标函数 PPO裁剪目标函数 PPO裁剪目标函数 PPO裁剪目�
 
 ### 图解：PPO信任区域视角
 
-![PPO信任区域]
 
-PPO信任区域
-PPO信任区域 PPO信任区域 PPO信任区域 PPO信任区域 PPO信任区域 PPO信任区域 PPO信任区域 PPO信任区域 PPO信任区域 PPO信任区域 PPO信任区域
+![PPO信任区域](./images/trust_region.png)
+
 
 ## 4. 完整的PPO算法
 
