@@ -43,7 +43,7 @@ GSPO是**阿里巴巴Qwen团队**提出的LLM强化学习算法，解决了GRPO�
 **问题**：Token级概率比的乘积可能爆炸或坍缩：
 
 $$
-r^{seq} = \prod_{t=1}^{T \frac{\pi_\theta(y_t|y_{<t})}{\pi_{old}(y_t|y_{<t})} = \prod_{t=1}^T r_t
+r^{seq} = \prod_{t=1}^{T_1} \frac{\pi_\theta(y_t|y_{<t})}{\pi_{old}(y_t|y_{<t})} = \prod_{t=1}^T r_t
 $$
 
 当 $T$ 很大（长CoT推理）时：
