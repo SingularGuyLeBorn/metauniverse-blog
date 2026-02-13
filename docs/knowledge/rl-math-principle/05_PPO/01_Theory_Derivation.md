@@ -47,7 +47,7 @@ $$
 
 符号含义类型说明$\theta$参数向量策略网络的参数$\alpha$学习率标量控制更新步长$\nabla_\theta$梯度算子计算损失对参数的偏导$\pi_\theta(a \vert s)$策略概率标量在状态 $s$ 下选择动作 $a$ 的概率$G_t$累计回报标量$G_t = \sum_{k=0}^{\infty} \gamma^k r_{t+k}$
 
-问题1：On-Policy限制
+**问题1：On-Policy限制**
 
 每次更新 $\theta$ 后，必须丢弃所有旧数据，重新采样。
 
