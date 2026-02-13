@@ -202,7 +202,7 @@ PPO裁剪目标函数 PPO裁剪目标函数 PPO裁剪目标函数 PPO裁剪目�
 
 概念公式说明概率比$r_t(\theta) = \frac{\pi_\theta}{\pi_{\text{old}}}$衡量策略变更PPO-Clip$L = \mathbb{E}[\min(r_t A_t, \text{clip} \cdot A_t)]$保护性更新
 
-### 5.2 PPO的贡献 [](#_5-2-ppo的贡献)
+### 5.2 PPO的贡献
 
 - **简单高效**：只需一阶梯度，无需二阶 Hessian 矩阵。
 - **稳定可靠**：裁剪机制防止策略剧烈变化。
