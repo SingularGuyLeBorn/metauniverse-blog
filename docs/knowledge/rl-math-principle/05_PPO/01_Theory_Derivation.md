@@ -156,9 +156,6 @@ $$
 
 ![PPO裁剪目标函数](/knowledge/rl-math-principle/05_PPO/images/clipping_objective.png)
 
-PPO裁剪目标函数
-PPO裁剪目标函数 PPO裁剪目标函数 PPO裁剪目标函数 PPO裁剪目标函数 PPO裁剪目标函数 PPO裁剪目标函数 PPO裁剪目标函数 PPO裁剪目标函数 PPO裁剪目标函数 PPO裁剪目标函数 PPO裁剪目标函数
-
 **关键理解**：
 
 - PPO通过裁剪限制了策略更新的幅度，保证新策略不会偏离旧策略太远。
