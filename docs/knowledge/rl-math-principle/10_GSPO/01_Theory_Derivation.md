@@ -21,7 +21,7 @@ GSPO是**阿里巴巴Qwen团队**提出的LLM强化学习算法，解决了GRPO�
 
 本章将：
 
-* 分析GRPO的token级问题
+分析GRPO的token级问题
 
 详细推导GSPO的序列级重要性比率
 
