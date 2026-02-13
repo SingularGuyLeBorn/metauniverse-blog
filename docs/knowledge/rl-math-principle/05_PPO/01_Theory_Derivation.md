@@ -35,7 +35,7 @@ PPO是**现代深度强化学习的标准算法**，被广泛应用于：
 
 ## 1. REINFORCE和TRPO的问题
 
-### 1.1 REINFORCE的问题回顾
+#### 1.1 REINFORCE的问题回顾
 
 回忆第3章，REINFORCE的更新规则是：
 
