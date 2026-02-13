@@ -46,10 +46,12 @@ import ImageLightbox from "./components/features/ImageLightbox.vue";
 import ImageCaptions from "./components/features/ImageCaptions.vue";
 import ZenModeToggle from "./components/features/ZenModeToggle.vue";
 import LinkPopover from "./components/features/LinkPopover.vue";
-import LiveEditor from "./components/features/LiveEditor.vue";
+import GlobalPageEditor from "./components/features/GlobalPageEditor.vue";
 import HistoryViewer from "./components/features/HistoryViewer.vue";
 import FileManager from "./components/features/FileManager.vue";
 import SidebarContextMenu from "./components/features/SidebarContextMenu.vue";
+import VditorEditor from "./components/editor/VditorEditor.vue";
+import EditorContainer from "./components/editor/EditorContainer.vue";
 
 // PPO Visualization Components
 import PPOHeader from "./components/features/RL/ppo/components/PPOHeader.vue";
@@ -89,14 +91,14 @@ export default {
       // 布局底部插槽 - 模式切换器、热力图、全局布局控制器、灯箱
       "layout-bottom": () =>
         h("div", { id: "mu-teleport-container" }, [
-          h(ModeSwitcher),
+          // h(ModeSwitcher), // Disable Mode Switcher
           h(SemanticHeatmap),
           h(GlobalLayoutControl), // 全局布局控制器
           h(ImageLightbox), // 图片灯箱
           h(ImageCaptions), // 图片标题自动生成
           h(ZenModeToggle), // Zen Mode Exit Button
           h(LinkPopover), // Link Preview Card
-          h(LiveEditor), // Live Markdown Editor
+          h(GlobalPageEditor), // REPLACED LiveEditor
           h(HistoryViewer), // Version History Viewer
           h(SidebarContextMenu) // Sidebar Context Menu
         ]),
@@ -123,7 +125,7 @@ export default {
     app.component("SegmentAnnotation", SegmentAnnotation);
     app.component("CodeSandbox", CodeSandbox);
     app.component("RAGSearch", RAGSearch);
-    app.component('LiveEditor', LiveEditor)
+    app.component('GlobalPageEditor', GlobalPageEditor)
     app.component('HistoryViewer', HistoryViewer)
     app.component('FileManager', FileManager)
     app.component('SidebarContextMenu', SidebarContextMenu)
@@ -142,6 +144,8 @@ export default {
     app.component("Breadcrumbs", Breadcrumbs);
     app.component("ImageLightbox", ImageLightbox);
     app.component("ImageCaptions", ImageCaptions);
+    app.component("VditorEditor", VditorEditor);
+    app.component("EditorContainer", EditorContainer);
 
     // Register PPO Visualization Components
     app.component("PPOHeader", PPOHeader);

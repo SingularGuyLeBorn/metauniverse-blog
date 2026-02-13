@@ -170,7 +170,7 @@
   - [Scaling Laws for Neural Language Models](https://arxiv.org/pdf/2001.08361) By OpenAI 2020
   - [Training Compute-Optimal Large Language Models](https://arxiv.org/pdf/2203.15556) By DeepMind 2022
   - 每个算力量级都有最优的参数量,当把图画出来的时候,惊人的发现他们是线性关系
-<img src="../../.files/THxhih5qE18mGFk.png" alt="" height="255" />
+**[Missing Image: Scaling Laws - THxhih5qE18mGFk.png]**
 - **内容**:
   - **Chinchilla 最优**: 学习在给定的计算预算下,如何平衡模型大小 (model size) 和训练数据量,以达到最优性能.
   - **经验法则**: `模型参数量 × 20 ≈ 最佳训练 Token 数`  但局限性是这没考虑到推理成本
@@ -182,7 +182,7 @@
 ### 支柱四: 数据 (Data)
 - **目标**: 理解数据如何决定模型的能力.
   模型的功能完全(或者说大部分)是由数据决定的,如果用多语言数据训练就会有多语言能力等等
-<img src="../../.files/bKwzlsnbBVWwsMN.png" alt="" height="330" />
+**[Missing Image: Data Sources - bKwzlsnbBVWwsMN.png]**
 数据来源多种多样,这张图是四年前的,但依然适用
 - **内容**:
   - **评估 (Evaluation)**: 学习如何评估模型,包括困惑度 (Perplexity)、标准化测试 (如 MMLU) 和对指令遵循能力的评估.
